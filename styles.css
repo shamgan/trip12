@@ -125,3 +125,9 @@ ol.steps{padding-inline-start:1.3em} ol.steps li{margin-bottom:8px}
 ol.plan{margin:0;padding-inline-start:1.4em}
 ol.plan li{padding:8px 0;border-bottom:1px solid var(--line);font-weight:600}
 ol.plan li:last-child{border-bottom:0}
+
+.gallery{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.gallery figure{margin:0}
+.gallery img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;display:block}
+.gallery figcaption{font-size:.75rem;color:var(--muted);margin-top:2px}
+img.hero{width:100%;aspect-ratio:2/1;object-fit:cover;border-radius:14px;display:block;margin-bottom:10px}

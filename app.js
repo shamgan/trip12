@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '1.0.3';
+const APP_VERSION = '1.1.0';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -74,7 +74,7 @@ function sheetToOverrides(rows) {
   const ov = { version: 0, date: '', changes: '', schedule: {}, notices: [], checklist: [], phones: [], feedback: {}, fixes: [] };
   rows.forEach(r => {
     const [type, key, value, extra] = [(r[0] || '').toLowerCase(), r[1] || '', r[2] || '', r[3] || ''];
-    if (type === 'meta') { if (key === 'version') ov.version = Number(value) || 0; else if (key === 'date') ov.date = value; else if (key === 'changes') ov.changes = value; }
+    if (type === 'meta') { if (key === 'status') ov.status = value.trim().toLowerCase(); else if (key === 'version') ov.version = Number(value) || 0; else if (key === 'date') ov.date = value; else if (key === 'changes') ov.changes = value; }
     else if (type === 'schedule' && /^d\d$/.test(key)) (ov.schedule[key] = ov.schedule[key] || []).push({ time: value, text: extra });
     else if (type === 'notice' && value) ov.notices.push(value);
     else if (type === 'checklist' && value) ov.checklist.push(value);
@@ -105,6 +105,41 @@ function updateCard() {
   return `<div class="card soft"><div class="row" style="align-items:center;justify-content:space-between">
     <div><b>עדכונים מהצוות</b><div class="small muted">${v && v.date ? 'עודכן לאחרונה: ' + esc(v.date) : 'הצוות מעדכן את האתר מדי פעם. מומלץ לבדוק כשיש קליטה.'}</div></div>
     <button class="btn secondary" data-act="update">בדוק עדכונים</button></div></div>`;
+}
+
+/* ---------- end of trip: deactivate ---------- */
+function isEnded() {
+  if (LS.get('ended', false)) return true;
+  const end = Date.parse(C.tripDates.end + 'T23:59:59+02:00') + (C.endDays || 14) * 864e5;
+  return Date.now() > end;
+}
+function endApp() {
+  try { Object.keys(localStorage).filter(k => k.startsWith('trip12.')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  LS.set('ended', true); stopGeo();
+}
+async function checkEndFlag() {
+  // בדיקה שקטה, רק אם יש אינטרנט: האם הצוות הודיע שהטיול הסתיים. לא נשלח שום מידע.
+  if (!navigator.onLine || !C.updatesUrl || LS.get('ended', false)) return;
+  try {
+    const res = await fetch(C.updatesUrl + (C.updatesUrl.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const ov = sheetToOverrides(parseCSV(await res.text()));
+    if (ov.status === 'ended') { endApp(); route(); }
+  } catch (e) {}
+}
+function viewEnded() {
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  return `<div class="card" style="text-align:center;margin-top:20px"><div style="font-size:3rem" aria-hidden="true">🏜️</div>
+    <h1>הטיול הסתיים</h1><p>תודה שטיילתם איתנו! מקווים שנהניתם.</p><p class="muted">אתר הטיול כבר לא פעיל. כל המידע שנשמר בטלפון (ניקוד, סימונים) נמחק.</p>
+    <p><b>עכשיו אפשר למחוק את האתר מהטלפון:</b></p></div>
+  <div class="card"><h2>${ios ? 'אייפון' : 'אנדרואיד'}</h2><ol class="steps">${ios
+    ? '<li>לחיצה ארוכה על האייקון "טיול י״ב" במסך הבית.</li><li>בוחרים <b>"הסר אפליקציה"</b> או <b>"מחק סימניה"</b> ומאשרים.</li><li>למחיקת שאריות: הגדרות ← Safari ← מתקדם ← נתוני אתרים ← מחיקת האתר.</li>'
+    : '<li>לחיצה ארוכה על האייקון "טיול י״ב" במסך הבית.</li><li>בוחרים <b>"הסרה"</b> ומאשרים.</li><li>למחיקת שאריות: Chrome ← ⋮ ← הגדרות ← הגדרות אתרים ← כל האתרים ← בוחרים את האתר ← "ניקוי והאפסה".</li>'}</ol>
+    <p class="small muted">לא הוספתם את האתר למסך הבית? אין מה למחוק – פשוט סגרו את הלשונית.</p></div>
+  <div class="card"><h2>${ios ? 'אנדרואיד' : 'אייפון'}</h2><ol class="steps">${ios
+    ? '<li>לחיצה ארוכה על האייקון במסך הבית.</li><li>בוחרים <b>"הסרה"</b> ומאשרים.</li>'
+    : '<li>לחיצה ארוכה על האייקון במסך הבית.</li><li>בוחרים <b>"הסר אפליקציה"</b> או <b>"מחק סימניה"</b> ומאשרים.</li>'}</ol></div>
+  <p class="footer-note">מגמת גאוגרפיה, תיכון דה-שליט · נבנה בעזרת בינה מלאכותית</p>`;
 }
 
 /* ---------- modal + toast ---------- */
@@ -162,6 +197,7 @@ function viewNow() {
   } else if (d) {
     const r = routeOf(d.route);
     h += `<div class="card"><div class="kicker">${esc(d.weekday)} · ${fmtDate(d.date)}</div><h1>${esc(d.title)}</h1>${schedList(d, true)}</div>`;
+    if (r && r.photos && r.photos[0]) h += `<img class="hero" src="${esc(r.photos[0].src)}" alt="${esc(r.photos[0].alt)}">`;
     if (r) h += `<div class="card soft"><h2>${badge(r)}${esc(r.name)}</h2><p>${esc(r.about)}</p><div class="row"><a class="btn" href="#route-${r.id}">פרטי המסלול</a><a class="btn secondary" href="#learn-${r.id}">העשרה</a></div></div>`;
     h += `<div class="card"><h2>משוב יומי</h2><p>בסוף היום – ספרו לנו איך היה. המשוב אנונימי לגמרי.</p><a class="btn secondary" href="#feedback">למשוב</a></div>`;
   } else if (t > C.tripDates.end) {
@@ -218,6 +254,7 @@ function viewRoute(id) {
   return `<p><a href="#routes">→ כל המסלולים</a></p><div class="card"><div class="kicker">${d ? esc(d.weekday) + ' ' + fmtDate(d.date) : ''}</div>
     <h1>${badge(r)}${esc(r.name)}</h1><p>${esc(r.about)}</p>
     <dl class="facts">${r.facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+    ${(r.photos || []).length ? `<div class="gallery">${r.photos.map(p => `<figure><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy"><figcaption>${esc(p.alt)}</figcaption></figure>`).join('')}</div><p class="small muted">צילום: נדב שמגר, מגמת גאוגרפיה (טיול תשפ"ו)</p>` : ''}
     <div class="row"><button class="btn" data-openmap="${r.id}">על המפה</button><a class="btn secondary" href="#learn-${r.id}">העשרה</a></div></div>
     <div class="card"><h2>דגשים למסלול הזה</h2>${r.rules.map(t => `<div class="rule"><span aria-hidden="true">•</span><div>${esc(t)}</div></div>`).join('')}
     <p class="small muted"><a href="#rules">כל הנהלים</a></p></div>${footer()}`;
@@ -376,7 +413,8 @@ function viewAbout() {
     <li>האתר לא אוסף, לא שומר ולא שולח מידע אישי. אין בו הרשמה, ואין צורך להזין שם או כל פרט מזהה.</li>
     <li>המיקום, אם תאפשרו אותו, משמש רק להצגת הנקודה שלכם על המפה, בתוך הטלפון. הוא לא נשלח לאף אחד.</li>
     <li>הניקוד בחידון ורשימת הציוד נשמרים רק בטלפון שלכם.</li>
-    <li>בבדיקת עדכונים, הטלפון מוריד תוכן מבית הספר ולא שולח שום מידע.</li>
+    <li>בבדיקת עדכונים, הטלפון מוריד תוכן מבית הספר ולא שולח שום מידע. בכל פתיחה עם אינטרנט האתר בודק בשקט רק דבר אחד – אם הצוות הודיע שהטיול הסתיים.</li>
+    <li>בסיום הטיול האתר מפסיק לפעול, וכל המידע שנשמר בטלפון נמחק.</li>
     <li>האתר לא משתמש בעוגיות מעקב, בפרסומות או בשירותי סטטיסטיקה.</li>
     <li>המשוב אנונימי לחלוטין. לא נאספים שם, מייל או כל פרט מזהה.</li></ul></div>
   <div class="card"><h2>האתר אינו כלי בטיחות</h2><ul>
@@ -425,6 +463,7 @@ function toggleGeo(btn) {
 const TITLES = { now: 'עכשיו', schedule: 'לוח זמנים', maps: 'מפות', quiz: 'חידון', more: 'עוד', routes: 'המסלולים', rules: 'נהלים', learn: 'העשרה', checklist: 'רשימת ציוד', feedback: 'משוב', install: 'התקנה והסרה', report: 'דיווח על טעות', a11y: 'נגישות', about: 'אודות' };
 function route() {
   stopGeo(); zoom = 1;
+  if (isEnded()) { $('#main').innerHTML = viewEnded(); document.querySelector('.tabbar').style.display = 'none'; document.title = 'הטיול הסתיים'; return; }
   const h = (location.hash || '#now').slice(1);
   const [page, arg] = h.includes('-') ? [h.slice(0, h.indexOf('-')), h.slice(h.indexOf('-') + 1)] : [h, null];
   const views = { now: viewNow, schedule: viewSchedule, maps: viewMaps, quiz: () => viewQuiz(arg), more: viewMore, routes: viewRoutes, route: () => viewRoute(arg),
@@ -477,8 +516,8 @@ if ('serviceWorker' in navigator) {
   applyA11y();
   try { BASE = await (await fetch('data/content.json')).json(); }
   catch (e) { $('#main').innerHTML = '<div class="card notice">לא הצלחנו לטעון את התוכן. פתחו את האתר פעם אחת עם אינטרנט.</div>'; return; }
-  rebuild(); route(); netStatus();
-  if (!LS.get('agreed', false)) {
+  rebuild(); route(); netStatus(); checkEndFlag();
+  if (!isEnded() && !LS.get('agreed', false)) {
     modal('ברוכים הבאים לאתר הטיול', `<p><b>טיול שנתי י"ב תשפ"ז</b> – מופק על ידי מגמת גאוגרפיה, תיכון דה-שליט.</p>
       <ul><li>מיזם בית ספרי לרווחת התלמידים, לשימוש פנימי בלבד וללא כוונות רווח. אין להעביר את הקישור מחוץ לטיול.</li>
       <li>השימוש רשות. אין הרשמה, ואין איסוף מידע אישי.</li>
