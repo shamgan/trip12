@@ -1,0 +1,17 @@
+{
+  "name": "טיול שנתי י\"ב תשפ\"ז",
+  "short_name": "טיול י\"ב",
+  "description": "אתר הטיול השנתי – מגמת גאוגרפיה, תיכון דה-שליט. לשימוש פנימי.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./#now",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c2d12",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
