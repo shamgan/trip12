@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '1.1.1';
+const APP_VERSION = '1.1.2';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -499,7 +499,7 @@ function applyA11y() { const s = LS.get('a11y', {}); document.body.classList.tog
 /* ---------- offline status ---------- */
 async function netStatus() {
   const chip = $('#netchip'); let ready = false;
-  try { ready = !!(await caches.has('trip12-' + APP_VERSION)) && LS.get('cached', false); } catch (e) {}
+  try { ready = !!(await caches.has('trip12-' + APP_VERSION)) && !!navigator.serviceWorker.controller; } catch (e) {}
   const on = navigator.onLine;
   chip.textContent = ready ? '✓ ללא רשת' : (on ? '⏳ שומר…' : '⚠ אין חיבור');
   chip.setAttribute('aria-label', ready ? (on ? 'האתר שמור ומוכן לעבודה ללא אינטרנט' : 'אין חיבור – האתר עובד מהזיכרון') : (on ? 'שומר את האתר לשימוש ללא אינטרנט' : 'אין חיבור לאינטרנט'));
