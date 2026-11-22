@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -507,8 +507,10 @@ async function netStatus() {
 }
 window.addEventListener('online', netStatus); window.addEventListener('offline', netStatus);
 if ('serviceWorker' in navigator) {
+  let hadController = !!navigator.serviceWorker.controller, reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } hadController = true; });
   navigator.serviceWorker.addEventListener('message', e => { if (e.data === 'cached') { LS.set('cached', true); netStatus(); } });
-  navigator.serviceWorker.register('sw.js').then(reg => navigator.serviceWorker.ready).then(r => { r.active && r.active.postMessage('check'); }).catch(() => {});
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => { if (navigator.onLine) reg.update().catch(() => {}); return navigator.serviceWorker.ready; }).then(r => { r.active && r.active.postMessage('check'); }).catch(() => {});
 }
 
 /* ---------- start ---------- */
