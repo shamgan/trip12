@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '1.3.5';
+const APP_VERSION = '2.0.0';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -187,39 +187,57 @@ function schedList(day, highlight) {
 const routeOf = id => C.routes.find(r => r.id === id);
 const badge = r => `<span class="badge b-${r.id}" aria-label="מסלול ${r.num}">${r.num}</span>`;
 
-function allergyCard() { const x = C.allergy; return x ? `<div class="card allergy" role="note"><h2><span aria-hidden="true">🥜🚫</span> ${esc(x.title)}</h2><p>${esc(x.text)}</p><p class="small">${esc(x.tip)}</p></div>` : ''; }
+function allergyCard(big) { const x = C.allergy; if (!x) return '';
+  return big ? `<div class="card allergy" role="note"><h2><span aria-hidden="true">🥜</span> ${esc(x.title)}</h2><p>${esc(x.text)}</p><p class="small">${esc(x.tip)}</p></div>`
+             : `<div class="strip" role="note"><b><span aria-hidden="true">🥜</span> ${esc(x.title)}.</b> ${esc(x.text)}</div>`; }
+function heroBlock(img, alt, kicker, title, extra = '') {
+  return `<section class="hero" style="background-image:url('${esc(img)}')"><span class="sr-only">${esc(alt)}</span>
+    ${extra}<div class="hero-txt"><div class="hero-k">${kicker}</div><h1>${esc(title)}</h1></div></section>`;
+}
+function dayChips(active) {
+  return `<nav class="daychips" aria-label="ימי הטיול">${C.days.map((x, i) => `<a href="#schedule" data-goday="${x.id}" class="${x.id === active ? 'on' : ''}" ${x.id === active ? 'aria-current="date"' : ''}>יום ${i + 1}<small>${fmtDate(x.date)}</small></a>`).join('')}</nav>`;
+}
+function nextCard(day) {
+  const i = nextItemIndex(day); const it = i >= 0 ? day.items[i] : day.items[0];
+  const after = i >= 0 ? day.items[i + 1] : day.items[1];
+  return `<a class="next" href="#schedule" data-goday="${day.id}"><div class="next-t">${it.time ? esc(it.time) : '•'}<small>${i >= 0 ? 'הבא בתור' : 'מתחילים'}</small></div>
+    <div><b>${esc(it.text)}</b>${after ? `<p>אחר כך: ${esc(after.text)}</p>` : ''}</div></a>`;
+}
+function photoTiles() {
+  const ph = id => { const r = routeOf(id); return r && r.photos && r.photos[0] ? r.photos[0].src : ''; };
+  return `<div class="tiles">
+    <a class="tile photo" href="#routes" style="background-image:url('${ph('amir')}')"><span>המסלולים</span></a>
+    <a class="tile photo" href="#maps" style="background-image:url('${ph('tzfachot')}')"><span>מפות</span></a>
+    <a class="tile c-sea" href="#quiz"><i aria-hidden="true">❓</i><span>חידון</span></a>
+    <a class="tile c-sun" href="#rules"><i aria-hidden="true">📋</i><span>נהלים</span></a></div>`;
+}
 function viewNow() {
   const t = today(), d = todayDay();
   let h = '';
-  C.notices.forEach(n => { h += `<div class="card notice" role="note"><b>הודעה מהצוות:</b> ${esc(n)}</div>`; });
+  const notices = C.notices.map(n => `<div class="strip info" role="note"><b>📣 הודעה מהצוות:</b> ${esc(n)}</div>`).join('');
+  const notSaved = (!navigator.serviceWorker || !navigator.serviceWorker.controller) ? `<div class="strip info"><b>📲 האתר עוד לא שמור בטלפון.</b> השאירו אותו פתוח עם אינטרנט עד שיופיע "✓ ללא רשת". <a href="#install">איך שומרים</a></div>` : '';
   if (t < C.tripDates.start) {
     const days = Math.round((new Date(C.tripDates.start) - new Date(t)) / 864e5);
-    h += allergyCard();
-    h += `<div class="card"><div class="kicker">לקראת הטיול</div><h1>${days === 1 ? 'מחר יוצאים!' : `עוד ${days} ימים לטיול`}</h1>
-      <p>שלושה ימים בהרי אילת: הקניון האדום, נחל אמיר והר צפחות, ולינה בחאן יעלים.</p></div>
-      <div class="card soft"><h2>מה עושים לפני הטיול</h2><ol class="steps">
-      <li>מחכים שלמעלה יופיע <b>"✓ ללא רשת"</b> – האתר שמור בטלפון.</li>
-      <li>מוסיפים למסך הבית (רשות).</li>
-      <li>עוברים על הנהלים ועל רשימת הציוד.</li></ol>
+    const r = routeOf(C.days[0].route);
+    h += heroBlock(r.photos[0].src, r.photos[0].alt, 'לקראת הטיול · הרי אילת', days === 1 ? 'מחר יוצאים!' : `עוד ${days} ימים`);
+    h += dayChips(null) + '<div class="pad">' + notices + allergyCard() + notSaved;
+    h += `<h2 class="sec-h">היום הראשון</h2>` + nextCard(C.days[0]);
+    h += `<div class="card soft"><h2>לפני שיוצאים</h2><ol class="steps"><li>מחכים שלמעלה יופיע <b>"✓ ללא רשת"</b>.</li><li>מוסיפים למסך הבית (רשות).</li><li>עוברים על הנהלים ועל רשימת הציוד.</li></ol>
       <div class="row"><a class="btn" href="#install">📲 שמירה בטלפון</a><a class="btn secondary" href="#checklist">🎒 ציוד</a></div></div>`;
   } else if (d) {
-    const r = routeOf(d.route);
-    if (d.id === C.days[0].id) h += allergyCard();
-    h += `<div class="card"><div class="kicker">${esc(d.weekday)} · ${fmtDate(d.date)}</div><h1>${esc(d.title)}</h1>${schedList(d, true)}</div>`;
-    if (r && r.photos && r.photos[0]) h += `<img class="hero" src="${esc(r.photos[0].src)}" alt="${esc(r.photos[0].alt)}">`;
-    if (r) h += `<div class="card soft"><h2>${badge(r)}${esc(r.name)}</h2><p>${esc(r.about)}</p><div class="row"><a class="btn" href="#route-${r.id}">פרטי המסלול</a><a class="btn secondary" href="#learn-${r.id}">העשרה</a></div></div>`;
-    h += `<div class="card"><h2>משוב יומי</h2><p>בסוף היום – ספרו לנו איך היה. המשוב אנונימי לגמרי.</p><a class="btn secondary" href="#feedback">למשוב</a></div>`;
-  } else if (t > C.tripDates.end) {
-    h += `<div class="card"><h1>תודה שטיילתם איתנו!</h1><p>נשמח לשמוע מה חשבתם על הטיול כולו. המשוב אנונימי לגמרי.</p><a class="btn" href="#feedback">משוב סיום הטיול</a></div>`;
+    const r = routeOf(d.route); const n = C.days.indexOf(d) + 1;
+    h += heroBlock(r.photos[0].src, r.photos[0].alt, `${esc(d.weekday)} · יום ${n} מתוך ${C.days.length}`, d.title);
+    h += dayChips(d.id) + '<div class="pad">' + notices + (d.id === C.days[0].id ? allergyCard() : '') + notSaved;
+    h += nextCard(d);
+    h += `<a class="routecard" href="#route-${r.id}"><img src="${esc((r.photos[1] || r.photos[0]).src)}" alt=""><div><div class="kicker">המסלול של היום</div><b>${badge(r)}${esc(r.name)}</b><span>${esc(r.facts.slice(0, 2).map(f => f[1]).join(' · '))}</span></div></a>`;
+    h += `<a class="strip feedback" href="#feedback"><b>💬 משוב יומי</b> – ספרו לנו איך היה. אנונימי לגמרי.</a>`;
+  } else {
+    const r = routeOf('tzfachot');
+    h += heroBlock(r.photos[0].src, r.photos[0].alt, 'הרי אילת · תשפ"ז', 'תודה שטיילתם איתנו!');
+    h += '<div class="pad">' + notices + `<div class="card"><p>נשמח לשמוע מה חשבתם על הטיול כולו. המשוב אנונימי לגמרי.</p><a class="btn block" href="#feedback">משוב סיום הטיול</a></div>`;
   }
-  if (!navigator.serviceWorker || !navigator.serviceWorker.controller) h += `<div class="card notice"><b>📲 האתר עוד לא שמור בטלפון.</b> השאירו אותו פתוח עם אינטרנט עד שיופיע "✓ ללא רשת". <a href="#install">איך שומרים ומוסיפים למסך הבית</a></div>`;
-  h += `<div class="tiles" style="margin-bottom:16px">
-    <a class="tile" href="#maps"><span class="e" aria-hidden="true">🗺️</span>מפות</a>
-    <a class="tile" href="#routes"><span class="e" aria-hidden="true">🥾</span>המסלולים</a>
-    <a class="tile" href="#rules"><span class="e" aria-hidden="true">📋</span>נהלים</a>
-    <a class="tile" href="#quiz"><span class="e" aria-hidden="true">❓</span>חידון</a></div>`;
-  h += updateCard();
-  return h + footer();
+  h += photoTiles() + updateCard() + footer() + '</div>';
+  return h;
 }
 
 function viewSchedule() {
@@ -252,22 +270,27 @@ function viewMaps() {
     ${body}<p class="small muted">המיקום מוצג רק בטלפון שלך ולא נשלח לאף אחד. ה-GPS עובד גם בלי קליטה, אבל צורך סוללה – כבו אותו כשלא צריך.</p>${footer()}`;
 }
 function viewRoutes() {
-  return `<h1>המסלולים</h1>` + C.days.map((d, i) => { const r = routeOf(d.route); return `<a class="card" style="display:block;text-decoration:none;color:inherit" href="#route-${r.id}">
-    <div class="kicker">יום ${i + 1} · ${esc(d.weekday)} ${fmtDate(d.date)}</div><h2>${badge(r)}${esc(r.name)}</h2>
-    <div class="small muted">${esc(r.facts.slice(0, 2).map(f => f[1]).join(' · '))}</div></a>`; }).join('') +
+  return `<h1>המסלולים</h1>` + C.days.map((d, i) => { const r = routeOf(d.route); const p = (r.photos || [])[0];
+    return `<a class="routecard big" href="#route-${r.id}">${p ? `<img src="${esc(p.src)}" alt="">` : ''}<div><div class="kicker">יום ${i + 1} · ${esc(d.weekday)} ${fmtDate(d.date)}</div><b>${badge(r)}${esc(r.name)}</b><span>${esc(r.facts.slice(0, 2).map(f => f[1]).join(' · '))}</span></div></a>`; }).join('') +
     `<div class="card soft"><h2>⛺ לינה: חאן יעלים</h2><p>בצומת יטבתה, כ-150 מטר מזרחית לפונדק יטבתה. שני הלילות של הטיול.</p></div>
      <div class="card soft"><h2>🏬 אייס מול, אילת</h2><p>ביקור ביום השלישי, אחרי מסלול הר צפחות ואום רשרש. <a href="#rules">הנהלים לאייס מול</a></p></div>` + footer();
 }
 function viewRoute(id) {
   const r = routeOf(id); if (!r) return viewRoutes();
-  const d = C.days.find(x => x.id === r.day);
-  return `<p><a class="textlink" href="#routes">→ כל המסלולים</a></p><div class="card"><div class="kicker">${d ? esc(d.weekday) + ' ' + fmtDate(d.date) : ''}</div>
-    <h1>${badge(r)}${esc(r.name)}</h1><p>${esc(r.about)}</p>
-    <dl class="facts">${r.facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
-    ${(r.photos || []).length ? `<div class="gallery">${r.photos.map(p => `<figure><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy"><figcaption>${esc(p.alt)}</figcaption></figure>`).join('')}</div><p class="small muted">צילום: נדב שמגר, מגמת גאוגרפיה (טיול תשפ"ו)</p>` : ''}
-    <div class="row"><button class="btn" data-openmap="${r.id}">על המפה</button><a class="btn secondary" href="#learn-${r.id}">העשרה</a></div></div>
-    <div class="card"><h2>דגשים למסלול הזה</h2>${r.rules.map(t => `<div class="rule"><span aria-hidden="true">•</span><div>${esc(t)}</div></div>`).join('')}
-    <p class="small muted"><a href="#rules">כל הנהלים</a></p></div>${footer()}`;
+  const d = C.days.find(x => x.id === r.day); const n = C.days.indexOf(d) + 1;
+  const fact = k => (r.facts.find(f => f[0] === k) || [, ''])[1];
+  const stats = [[fact('אורך').replace('כ-', '').replace(' ק"מ', ''), 'ק"מ'], [fact('דרגת קושי'), 'דרגת קושי'], [fact('סוג').split(' ')[0], 'סוג מסלול']].filter(s => s[0]);
+  const other = r.facts.filter(f => !['אורך', 'דרגת קושי', 'סוג'].includes(f[0]));
+  const photos = r.photos || []; const hp = photos[1] || photos[0];
+  return heroBlock(hp.src, hp.alt, `יום ${n} · ${esc(d.weekday)} ${fmtDate(d.date)}`, r.name, `<a class="hero-back" href="#routes">→ כל המסלולים</a>`).replace('<h1>', `<h1>${badge(r)}`) +
+    `<div class="stats">${stats.map(([v, l]) => `<div><b>${esc(v)}</b><small>${esc(l)}</small></div>`).join('')}</div><div class="pad">
+    <div class="card"><h2>על המסלול</h2><p>${esc(r.about)}</p>
+      <dl class="facts">${other.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></div>
+    ${photos.length ? `<div class="thumbs">${photos.map(p => `<figure><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy"><figcaption>${esc(p.alt)}</figcaption></figure>`).join('')}</div><p class="small muted">צילום: נדב שמגר, מגמת גאוגרפיה (טיול תשפ"ו)</p>` : ''}
+    <div class="card warn"><h2>⚠️ דגשים למסלול</h2>${r.rules.map(t => `<div class="rule"><span aria-hidden="true">•</span><div>${esc(t)}</div></div>`).join('')}
+      <a class="textlink" href="#rules">כל הנהלים ←</a></div>
+    <div class="row"><a class="btn" href="#learn-${r.id}">🪨 העשרה</a><button class="btn secondary" data-openmap="${r.id}">🗺️ על המפה</button></div>
+    ${footer()}</div>`;
 }
 
 function viewRules() {
@@ -289,7 +312,7 @@ function viewLearn(id) {
 
 function viewChecklist() {
   const done = LS.get('check', {});
-  return `<h1>רשימת ציוד</h1>${allergyCard()}<p class="small muted">הסימונים נשמרים רק בטלפון שלך.</p><div class="card">` +
+  return `<h1>רשימת ציוד</h1>${allergyCard(true)}<p class="small muted">הסימונים נשמרים רק בטלפון שלך.</p><div class="card">` +
     C.checklist.map((t, i) => `<label class="check ${done[t] ? 'done' : ''}"><input type="checkbox" data-check="${esc(t)}" ${done[t] ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('') +
     `</div>${updateCard()}${footer()}`;
 }
@@ -311,16 +334,13 @@ function viewReport() {
 }
 function viewMore() {
   const phones = C.phones && C.phones.length ? `<div class="card"><h2>טלפוני הצוות</h2>${C.phones.map(p => `<p><b>${esc(p.name)}:</b> <span dir="ltr">${esc(p.number)}</span></p>`).join('')}</div>` : '';
+  const T = (href, e, l, c) => `<a class="tile ${c}" href="#${href}"><i aria-hidden="true">${e}</i><span>${l}</span></a>`;
   return `<h1>עוד</h1><div class="tiles">
-    <a class="tile" href="#routes"><span class="e" aria-hidden="true">🥾</span>המסלולים</a>
-    <a class="tile" href="#learn"><span class="e" aria-hidden="true">🪨</span>העשרה</a>
-    <a class="tile" href="#rules"><span class="e" aria-hidden="true">📋</span>נהלים</a>
-    <a class="tile" href="#checklist"><span class="e" aria-hidden="true">🎒</span>רשימת ציוד</a>
-    <a class="tile" href="#feedback"><span class="e" aria-hidden="true">💬</span>משוב אנונימי</a>
-    <a class="tile" href="#report"><span class="e" aria-hidden="true">🛠️</span>דיווח על טעות</a>
-    <a class="tile" href="#install"><span class="e" aria-hidden="true">📲</span>התקנה והסרה</a>
-    <a class="tile" href="#a11y"><span class="e" aria-hidden="true">♿</span>נגישות</a>
-    <a class="tile" href="#about"><span class="e" aria-hidden="true">ℹ️</span>אודות והצהרות</a></div><br>${phones}${updateCard()}${footer()}`;
+    ${T('routes', '🥾', 'המסלולים', 'c-terra')}${T('learn', '🪨', 'העשרה', 'c-sea')}
+    ${T('rules', '📋', 'נהלים', 'c-sun')}${T('checklist', '🎒', 'רשימת ציוד', 'c-sand')}
+    ${T('feedback', '💬', 'משוב אנונימי', 'c-sand')}${T('report', '🛠️', 'דיווח על טעות', 'c-sand')}
+    ${T('install', '📲', 'התקנה והסרה', 'c-sand')}${T('a11y', '♿', 'נגישות', 'c-sand')}
+    ${T('about', 'ℹ️', 'אודות והצהרות', 'c-sand')}</div><br>${phones}${updateCard()}${footer()}`;
 }
 
 /* ---------- quiz ---------- */
@@ -480,6 +500,7 @@ function route() {
     report: viewReport, rules: viewRules, learn: () => viewLearn(arg), checklist: viewChecklist, feedback: viewFeedback, install: viewInstall, a11y: viewA11y, about: viewAbout };
   const v = views[page] || viewNow;
   $('#main').innerHTML = v();
+  document.body.classList.toggle('bleed', page === 'now' || page === 'route' || !views[page]);
   const tab = { now: 'now', schedule: 'schedule', maps: 'maps', quiz: 'quiz' }[page] || 'more';
   document.querySelectorAll('.tabbar a').forEach(a => { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   document.title = (TITLES[page] || 'טיול') + ' · טיול שנתי י"ב';
@@ -487,9 +508,10 @@ function route() {
 window.addEventListener('hashchange', () => { if (!$('#modal').hidden) $('#modal').hidden = true; route(); window.scrollTo(0, 0); $('#main').focus({ preventScroll: true }); });
 
 document.addEventListener('click', e => {
-  const t = e.target.closest('button, [data-act]'); if (!t) return;
+  const t = e.target.closest('button, [data-act], [data-goday]'); if (!t) return;
   if (t.dataset.act === 'update') return checkUpdates();
   if (t.dataset.day) { LS.set('schedDay', t.dataset.day); return route(); }
+  if (t.dataset.goday) { LS.set('schedDay', t.dataset.goday); }
   if (t.dataset.map) { LS.set('mapSel', t.dataset.map); return route(); }
   if (t.dataset.openmap) { LS.set('mapSel', 'eilat'); location.hash = '#maps'; return; }
   if (t.dataset.zoom) return setZoom(+t.dataset.zoom);

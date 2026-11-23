@@ -1,9 +1,10 @@
 /* Service worker: שומר את כל קבצי האתר בטלפון לשימוש ללא אינטרנט. לא אוסף ולא שולח מידע. */
-const CACHE = 'trip12-1.3.5';
+const CACHE = 'trip12-2.0.0';
 const ASSETS = ['./', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'data/content.json',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   'maps/eilat.webp', 'maps/israel.webp',
-  'photos/red-1.webp','photos/red-2.webp','photos/red-3.webp','photos/red-4.webp','photos/amir-1.webp','photos/amir-2.webp','photos/amir-3.webp','photos/tzf-1.webp','photos/tzf-2.webp'];
+  'photos/red-1.webp','photos/red-2.webp','photos/red-3.webp','photos/red-4.webp','photos/amir-1.webp','photos/amir-2.webp','photos/amir-3.webp','photos/tzf-1.webp','photos/tzf-2.webp',
+  'fonts/heebo-hebrew-400-normal.woff2','fonts/heebo-hebrew-700-normal.woff2','fonts/heebo-hebrew-800-normal.woff2','fonts/heebo-latin-400-normal.woff2','fonts/heebo-latin-700-normal.woff2','fonts/heebo-latin-800-normal.woff2'];
 
 async function notify(msg) { (await self.clients.matchAll({ includeUncontrolled: true })).forEach(c => c.postMessage(msg)); }
 
