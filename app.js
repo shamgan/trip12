@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.0.1';
+const APP_VERSION = '2.0.2';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -201,7 +201,7 @@ function nextCard(day) {
   const i = nextItemIndex(day); const it = i >= 0 ? day.items[i] : day.items[0];
   const after = i >= 0 ? day.items[i + 1] : day.items[1];
   return `<a class="next" href="#schedule" data-goday="${day.id}"><div class="next-t">${it.time ? esc(it.time) : '•'}<small>${i >= 0 ? 'הבא בתור' : 'מתחילים'}</small></div>
-    <div><b>${esc(it.text)}</b>${after ? `<p>אחר כך: ${esc(after.text)}</p>` : ''}</div></a>`;
+    <div><b>${esc(it.text)}</b>${after ? `<p>${after.time ? `<b class="at">ב-${esc(after.time)}</b> ` : 'אחר כך: '}${esc(after.text)}</p>` : ''}</div></a>`;
 }
 function photoTiles() {
   const ph = id => { const r = routeOf(id); return r && r.photos && r.photos[0] ? r.photos[0].src : ''; };
