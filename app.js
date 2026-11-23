@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '1.1.3';
+const APP_VERSION = '1.2.1';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -102,11 +102,9 @@ async function checkUpdates() {
 }
 function updateCard() {
   const v = LS.get('overrides', null);
-  return `<div class="card soft"><div class="row" style="align-items:center;justify-content:space-between">
-    <div><b>עדכונים מהצוות</b><div class="small muted">${v && v.date ? 'עודכן לאחרונה: ' + esc(v.date) : 'הצוות מעדכן את האתר מדי פעם. מומלץ לבדוק כשיש קליטה.'}</div></div>
-    <button class="btn secondary" data-act="update">בדוק עדכונים</button></div></div>`;
+  return `<div class="card soft update-strip"><div><b>🔄 עדכונים מהצוות</b><div class="small muted">${v && v.date ? 'עודכן לאחרונה: ' + esc(v.date) : 'הצוות מעדכן מדי פעם – בדקו כשיש קליטה'}</div></div>
+    <button class="btn secondary" data-act="update">בדוק עדכונים</button></div>`;
 }
-
 /* ---------- end of trip: deactivate ---------- */
 function isEnded() {
   if (LS.get('ended', false)) return true;
@@ -191,9 +189,10 @@ function viewNow() {
     h += `<div class="card"><div class="kicker">לקראת הטיול</div><h1>${days === 1 ? 'מחר יוצאים!' : `עוד ${days} ימים לטיול`}</h1>
       <p>שלושה ימים בהרי אילת: הקניון האדום, נחל אמיר והר צפחות, ולינה בחאן יעלים.</p></div>
       <div class="card soft"><h2>מה עושים לפני הטיול</h2><ol class="steps">
-      <li>פותחים את האתר פעם אחת עם אינטרנט ומחכים לסימון <b>"✓ ללא רשת"</b> למעלה – הוא אומר שהאתר שמור בטלפון.</li>
-      <li>אפשר (לא חובה) להוסיף את האתר למסך הבית – <a href="#install">איך עושים את זה</a>.</li>
-      <li>עוברים על <a href="#rules">הנהלים</a> ועל <a href="#checklist">רשימת הציוד</a>.</li></ol></div>`;
+      <li>מחכים שלמעלה יופיע <b>"✓ ללא רשת"</b> – האתר שמור בטלפון.</li>
+      <li>מוסיפים למסך הבית (רשות).</li>
+      <li>עוברים על הנהלים ועל רשימת הציוד.</li></ol>
+      <div class="row"><a class="btn" href="#install">📲 שמירה בטלפון</a><a class="btn secondary" href="#checklist">🎒 ציוד</a></div></div>`;
   } else if (d) {
     const r = routeOf(d.route);
     h += `<div class="card"><div class="kicker">${esc(d.weekday)} · ${fmtDate(d.date)}</div><h1>${esc(d.title)}</h1>${schedList(d, true)}</div>`;
@@ -204,12 +203,12 @@ function viewNow() {
     h += `<div class="card"><h1>תודה שטיילתם איתנו!</h1><p>נשמח לשמוע מה חשבתם על הטיול כולו. המשוב אנונימי לגמרי.</p><a class="btn" href="#feedback">משוב סיום הטיול</a></div>`;
   }
   if (!navigator.serviceWorker || !navigator.serviceWorker.controller) h += `<div class="card notice"><b>📲 האתר עוד לא שמור בטלפון.</b> השאירו אותו פתוח עם אינטרנט עד שיופיע "✓ ללא רשת". <a href="#install">איך שומרים ומוסיפים למסך הבית</a></div>`;
-  h += updateCard();
-  h += `<div class="tiles">
+  h += `<div class="tiles" style="margin-bottom:16px">
     <a class="tile" href="#maps"><span class="e" aria-hidden="true">🗺️</span>מפות</a>
     <a class="tile" href="#routes"><span class="e" aria-hidden="true">🥾</span>המסלולים</a>
     <a class="tile" href="#rules"><span class="e" aria-hidden="true">📋</span>נהלים</a>
     <a class="tile" href="#quiz"><span class="e" aria-hidden="true">❓</span>חידון</a></div>`;
+  h += updateCard();
   return h + footer();
 }
 
@@ -217,16 +216,16 @@ function viewSchedule() {
   const sel = LS.get('schedDay', (todayDay() || C.days[0]).id);
   const d = C.days.find(x => x.id === sel) || C.days[0];
   return `<h1>לוח זמנים</h1>
-    <div class="daytabs" role="tablist" aria-label="בחירת יום">${C.days.map((x, i) => `<button role="tab" aria-selected="${x.id === d.id}" data-day="${x.id}">יום ${i + 1} · ${fmtDate(x.date)}</button>`).join('')}</div>
+    <div class="daytabs" role="tablist" aria-label="בחירת יום">${C.days.map((x, i) => `<button role="tab" aria-selected="${x.id === d.id}" data-day="${x.id}">יום ${i + 1}<span class="sub">${fmtDate(x.date)}</span></button>`).join('')}</div>
     <div class="card" role="tabpanel"><div class="kicker">${esc(d.weekday)}</div><h2>${esc(d.title)}</h2>${schedList(d, d.date === today())}</div>
     <p class="small muted">הלו"ז עשוי להשתנות. הוראות הצוות בשטח הן הקובעות.</p>${updateCard()}${footer()}`;
 }
 
 function mapViewer(key, opts = {}) {
-  return `<div class="maptools">
+  return `${opts.geo ? `<button class="btn block" data-geo="${key}" aria-pressed="false">📍 הצג את המיקום שלי</button>` : ''}
+    <div class="maptools">
       <button class="btn secondary" data-zoom="1" aria-label="הגדל מפה">＋ הגדל</button>
       <button class="btn secondary" data-zoom="-1" aria-label="הקטן מפה">－ הקטן</button>
-      ${opts.geo ? `<button class="btn" data-geo="${key}" aria-pressed="false">📍 הצג את המיקום שלי</button>` : ''}
     </div>
     <div class="mapwrap" id="mapwrap"><div class="mapinner" id="mapinner" style="width:100%">
       <img src="${esc(opts.img)}" alt="${esc(opts.alt)}"><div class="dot" id="geodot" hidden></div></div></div>
@@ -252,7 +251,7 @@ function viewRoutes() {
 function viewRoute(id) {
   const r = routeOf(id); if (!r) return viewRoutes();
   const d = C.days.find(x => x.id === r.day);
-  return `<p><a href="#routes">→ כל המסלולים</a></p><div class="card"><div class="kicker">${d ? esc(d.weekday) + ' ' + fmtDate(d.date) : ''}</div>
+  return `<p><a class="textlink" href="#routes">→ כל המסלולים</a></p><div class="card"><div class="kicker">${d ? esc(d.weekday) + ' ' + fmtDate(d.date) : ''}</div>
     <h1>${badge(r)}${esc(r.name)}</h1><p>${esc(r.about)}</p>
     <dl class="facts">${r.facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
     ${(r.photos || []).length ? `<div class="gallery">${r.photos.map(p => `<figure><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy"><figcaption>${esc(p.alt)}</figcaption></figure>`).join('')}</div><p class="small muted">צילום: נדב שמגר, מגמת גאוגרפיה (טיול תשפ"ו)</p>` : ''}
@@ -274,7 +273,7 @@ function viewLearn(id) {
   if (!id) return `<h1>העשרה</h1><p>הסברים קצרים לקריאה בעצירות, באוטובוס או בערב – לא תוך כדי הליכה.</p>` +
     list.map(l => `<a class="card" style="display:block;text-decoration:none;color:inherit" href="#learn-${l.id}"><h2>${esc(l.title)}</h2><div class="small muted">${l.cards.length} כרטיסים</div></a>`).join('') + footer();
   const l = list.find(x => x.id === id) || list[0];
-  return `<p><a href="#learn">→ כל נושאי ההעשרה</a></p><h1>${esc(l.title)}</h1>` +
+  return `<p><a class="textlink" href="#learn">→ כל נושאי ההעשרה</a></p><h1>${esc(l.title)}</h1>` +
     l.cards.map(c => `<article class="card"><h2>${esc(c.title)}</h2><p>${esc(c.text)}</p>${c.ask ? `<p class="small"><b>שאלה למחשבה:</b> ${esc(c.ask)}</p>` : ''}</article>`).join('') + footer();
 }
 
@@ -335,11 +334,11 @@ function viewQuiz(chId) {
   const qi = ch.questions.findIndex((_, i) => !(i in s.answers));
   const idx = qi === -1 ? null : qi;
   if (idx === null) {
-    return `<p><a href="#quiz">→ כל הפרקים</a></p><div class="card"><h1>סיימת את הפרק!</h1><div class="score">${s.score}</div><p>מתוך ${ch.questions.length * C.quiz.pointsPerCorrect} נקודות אפשריות.</p></div>` +
+    return `<p><a class="textlink" href="#quiz">→ כל הפרקים</a></p><div class="card"><h1>סיימת את הפרק!</h1><div class="score">${s.score}</div><p>מתוך ${ch.questions.length * C.quiz.pointsPerCorrect} נקודות אפשריות.</p></div>` +
       ch.questions.map((q, i) => `<div class="card"><b>${i + 1}. ${esc(q.q)}</b><p class="small">התשובה הנכונה: ${esc(q.o[q.a])}</p><p class="small muted">${esc(q.e)}</p></div>`).join('') + footer();
   }
   const q = ch.questions[idx], order = s.order[idx];
-  return `<p><a href="#quiz">→ כל הפרקים</a></p><div class="small muted">${esc(ch.title)} · שאלה ${idx + 1} מתוך ${ch.questions.length}</div>
+  return `<p><a class="textlink" href="#quiz">→ כל הפרקים</a></p><div class="small muted">${esc(ch.title)} · שאלה ${idx + 1} מתוך ${ch.questions.length}</div>
     <div class="progress" aria-hidden="true"><i style="width:${(idx / ch.questions.length) * 100}%"></i></div>
     <div class="card"><h2 id="qtext">${esc(q.q)}</h2><div role="group" aria-labelledby="qtext">
     ${order.map((oi, pos) => `<button class="quiz-opt" data-ans="${oi}" data-ch="${ch.id}" data-q="${idx}"><span class="lt" aria-hidden="true">${LETTERS[pos]}</span><span>${esc(q.o[oi])}</span></button>`).join('')}
