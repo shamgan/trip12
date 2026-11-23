@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '1.2.1';
+const APP_VERSION = '1.3.1';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -70,12 +70,19 @@ function parseCSV(text) {
    notice,,<text>        | checklist,,<text>
    phone,<name>,<number> | feedback,<d1|d2|d3|final|report>,<url>
    fix,<path>,<new text>   e.g. fix,routes.1.about,<טקסט>  (מספור מ-1) */
+/* גיליון העדכונים: עמודות type | key | value | time
+   meta,status,active/ended · meta,date,<טקסט> · meta,changes,<מה השתנה>
+   schedule,d1|d2|d3,<פעילות>,<שעה>  · notice,,<הודעה> · checklist,,<פריט>
+   phone,<שם>,<מספר> · feedback,d1|d2|d3|final|report,<קישור> · fix,<נתיב>,<טקסט חדש>
+   שורות שמתחילות ב-# הן הערות. גרסה מחושבת אוטומטית מתוכן הגיליון – כל שינוי הוא עדכון חדש. */
+function normTime(t) { const m = /^(\d{1,2}):(\d{2})/.exec(String(t || '').trim()); return m ? m[1].padStart(2, '0') + ':' + m[2] : ''; }
+function hashRows(rows) { const s = JSON.stringify(rows.filter(r => !(r[0] || '').trim().startsWith('#'))); let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
 function sheetToOverrides(rows) {
-  const ov = { version: 0, date: '', changes: '', schedule: {}, notices: [], checklist: [], phones: [], feedback: {}, fixes: [] };
+  const ov = { version: hashRows(rows), date: '', changes: '', status: 'active', schedule: {}, notices: [], checklist: [], phones: [], feedback: {}, fixes: [] };
   rows.forEach(r => {
-    const [type, key, value, extra] = [(r[0] || '').toLowerCase(), r[1] || '', r[2] || '', r[3] || ''];
-    if (type === 'meta') { if (key === 'status') ov.status = value.trim().toLowerCase(); else if (key === 'version') ov.version = Number(value) || 0; else if (key === 'date') ov.date = value; else if (key === 'changes') ov.changes = value; }
-    else if (type === 'schedule' && /^d\d$/.test(key)) (ov.schedule[key] = ov.schedule[key] || []).push({ time: value, text: extra });
+    const [type, key, value, extra] = [(r[0] || '').trim().toLowerCase(), (r[1] || '').trim(), (r[2] || '').trim(), (r[3] || '').trim()];
+    if (type === 'meta') { if (key === 'status') ov.status = value.toLowerCase() || 'active'; else if (key === 'date') ov.date = value; else if (key === 'changes') ov.changes = value; }
+    else if (type === 'schedule' && /^d\d$/.test(key) && value) (ov.schedule[key] = ov.schedule[key] || []).push({ time: normTime(extra), text: value });
     else if (type === 'notice' && value) ov.notices.push(value);
     else if (type === 'checklist' && value) ov.checklist.push(value);
     else if (type === 'phone' && key && value) ov.phones.push({ name: key, number: value });
@@ -93,9 +100,9 @@ async function checkUpdates() {
     if (!res.ok) throw new Error(res.status);
     const ov = sheetToOverrides(parseCSV(await res.text()));
     const cur = LS.get('overrides', null);
-    if (cur && ov.version <= cur.version) return modal('אין עדכון חדש', '<p>יש לך את הגרסה העדכנית.</p>', [['סגור']]);
+    if (cur && ov.version === cur.version) return modal('אין עדכון חדש', '<p>יש לך את הגרסה העדכנית.</p>', [['סגור']]);
     modal('יש עדכון חדש', `<p><b>מה השתנה:</b> ${esc(ov.changes || 'עדכון מידע מהצוות')}</p>${ov.date ? `<p class="small muted">עודכן: ${esc(ov.date)}</p>` : ''}<p>להוריד את העדכון לטלפון?</p>`,
-      [['הורד עדכון', () => { LS.set('overrides', ov); LS.set('lastCheck', new Date().toISOString()); rebuild(); route(); toast('העדכון הורד בהצלחה'); }], ['לא עכשיו']]);
+      [['הורד עדכון', () => { if (!ov.date) ov.date = new Date().toLocaleString('he-IL', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }); LS.set('overrides', ov); LS.set('lastCheck', new Date().toISOString()); rebuild(); route(); toast('העדכון הורד בהצלחה'); }], ['לא עכשיו']]);
   } catch (e) {
     modal('לא הצלחנו לבדוק עדכונים', '<p>ייתכן שהקליטה חלשה. האתר ממשיך לעבוד עם המידע הקיים.</p>', [['סגור']]);
   }
@@ -180,12 +187,14 @@ function schedList(day, highlight) {
 const routeOf = id => C.routes.find(r => r.id === id);
 const badge = r => `<span class="badge b-${r.id}" aria-label="מסלול ${r.num}">${r.num}</span>`;
 
+function allergyCard() { const x = C.allergy; return x ? `<div class="card allergy" role="note"><h2><span aria-hidden="true">🥜🚫</span> ${esc(x.title)}</h2><p>${esc(x.text)}</p><p class="small">${esc(x.tip)}</p></div>` : ''; }
 function viewNow() {
   const t = today(), d = todayDay();
   let h = '';
   C.notices.forEach(n => { h += `<div class="card notice" role="note"><b>הודעה מהצוות:</b> ${esc(n)}</div>`; });
   if (t < C.tripDates.start) {
     const days = Math.round((new Date(C.tripDates.start) - new Date(t)) / 864e5);
+    h += allergyCard();
     h += `<div class="card"><div class="kicker">לקראת הטיול</div><h1>${days === 1 ? 'מחר יוצאים!' : `עוד ${days} ימים לטיול`}</h1>
       <p>שלושה ימים בהרי אילת: הקניון האדום, נחל אמיר והר צפחות, ולינה בחאן יעלים.</p></div>
       <div class="card soft"><h2>מה עושים לפני הטיול</h2><ol class="steps">
@@ -195,6 +204,7 @@ function viewNow() {
       <div class="row"><a class="btn" href="#install">📲 שמירה בטלפון</a><a class="btn secondary" href="#checklist">🎒 ציוד</a></div></div>`;
   } else if (d) {
     const r = routeOf(d.route);
+    if (d.id === C.days[0].id) h += allergyCard();
     h += `<div class="card"><div class="kicker">${esc(d.weekday)} · ${fmtDate(d.date)}</div><h1>${esc(d.title)}</h1>${schedList(d, true)}</div>`;
     if (r && r.photos && r.photos[0]) h += `<img class="hero" src="${esc(r.photos[0].src)}" alt="${esc(r.photos[0].alt)}">`;
     if (r) h += `<div class="card soft"><h2>${badge(r)}${esc(r.name)}</h2><p>${esc(r.about)}</p><div class="row"><a class="btn" href="#route-${r.id}">פרטי המסלול</a><a class="btn secondary" href="#learn-${r.id}">העשרה</a></div></div>`;
@@ -279,7 +289,7 @@ function viewLearn(id) {
 
 function viewChecklist() {
   const done = LS.get('check', {});
-  return `<h1>רשימת ציוד</h1><p class="small muted">הסימונים נשמרים רק בטלפון שלך.</p><div class="card">` +
+  return `<h1>רשימת ציוד</h1>${allergyCard()}<p class="small muted">הסימונים נשמרים רק בטלפון שלך.</p><div class="card">` +
     C.checklist.map((t, i) => `<label class="check ${done[t] ? 'done' : ''}"><input type="checkbox" data-check="${esc(t)}" ${done[t] ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('') +
     `</div>${updateCard()}${footer()}`;
 }
@@ -423,7 +433,7 @@ function viewAbout() {
     <li>כל הנחיה בשטח ניתנת על ידי הצוות, והוראות הצוות קודמות תמיד.</li>
     <li>בזמן הליכה במסלול – הטלפון בכיס.</li></ul></div>
   <div class="card"><h2>מקורות</h2><p>התוכן הוכן בידי מגמת הגאוגרפיה בעזרת בינה מלאכותית, וייתכנו בו אי-דיוקים. תוואי המסלולים מבוסס על מפות סימון שבילים. נתוני מפה: © OpenStreetMap contributors, Natural Earth.</p>
-  <p class="small muted">גרסת אתר ${APP_VERSION} · תוכן מ-${esc(C.updatedAt)}${ov ? ` · עדכון צוות מס' ${esc(ov.version)}${ov.date ? ' (' + esc(ov.date) + ')' : ''}` : ''}</p></div>${footer()}`;
+  <p class="small muted">גרסת אתר ${APP_VERSION} · תוכן מ-${esc(C.updatedAt)}${ov ? ` · עדכון צוות${ov.date ? ' מ-' + esc(ov.date) : ''}` : ''}</p></div>${footer()}`;
 }
 function footer() { return `<p class="footer-note">🤖 נבנה בעזרת בינה מלאכותית – ייתכנו טעויות · מגמת גאוגרפיה, תיכון דה-שליט · <a href="#report">דיווח על טעות</a> · <a href="#about">אודות</a></p>`; }
 
