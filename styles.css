@@ -297,3 +297,5 @@ body.saver .btn:not(.secondary){background:#b8461f;border-color:#b8461f;color:#f
 body.saver{--primary:#ff9f7a;--sea:#7fe0e8}body.saver .tile.c-sea,body.saver .tile.c-sea2{background:#0b4f56;color:#fff}body.saver .daytabs button[aria-selected="true"],body.saver .seg button[aria-pressed="true"]{background:#b8461f;color:#fff;border-color:#b8461f}body.saver .tabbar a[aria-current="page"]{color:#ffb08f}body.saver .daychips a.on{background:#b8461f}
 body.saver .tabbar a{color:#e6e6e6}body.saver .daytabs button,body.saver .seg button{background:#1e1e1e;color:#ffb08f}body.saver .tile.c-terra{background:#8f2f12;color:#fff}body.saver .tile.c-sun{background:#8a5a0f;color:#fff}
 body.saver .tile.c-sand{background:#1e1e1e;color:#f2f2f2}body.saver .card.allergy h2{color:#ffb08f}
+body.saver .daychips a.on small{color:#fff}
+.daychips a.on small{color:#fff}

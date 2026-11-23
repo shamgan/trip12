@@ -63,18 +63,19 @@
   async function fetchForecast(d) {
     const loc = (X().forecastPlaces || {})[d.id]; if (!loc || !navigator.onLine) return;
     const cache = S.get('fc', null); if (cache && cache.day === d.id && Date.now() - cache.t < 45 * 60e3) return;
+    if (fetchForecast.busy) return; fetchForecast.busy = true; setTimeout(() => fetchForecast.busy = false, 15000);
     const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + loc.lat + '&longitude=' + loc.lon +
       '&hourly=temperature_2m,precipitation_probability,wind_speed_10m,uv_index,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunset&timezone=Asia%2FJerusalem&forecast_days=1';
     try {
-      const r = await fetch(url, { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' }); if (!r.ok) return;
+      const r = await fetch(url, { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' }); if (!r.ok) throw 0;
       const j = await r.json(); S.set('fc', { day: d.id, t: Date.now(), place: loc.name, j });
       if ((location.hash || '#now') === '#now' && window.route) window.route();
-    } catch (e) {}
+    } catch (e) { S.set('fcFail', Date.now()); if ((location.hash || '#now') === '#now' && window.route) window.route(); }
   }
   function forecastCard() {
     const d = forecastWindow(); if (!d) return '';
     const fc = S.get('fc', null);
-    if (!fc || fc.day !== d.id) { fetchForecast(d); return navigator.onLine ? `<div class="card weather"><div class="kicker">🌤️ התחזית למסלול היום</div><p class="small">טוען תחזית עדכנית…</p></div>` : ''; }
+    if (!fc || fc.day !== d.id) { const failed = Date.now() - S.get('fcFail', 0) < 10 * 60e3; if (!failed) fetchForecast(d); return navigator.onLine && !failed ? `<div class="card weather"><div class="kicker">🌤️ התחזית למסלול היום</div><p class="small">טוען תחזית עדכנית…</p></div>` : ''; }
     fetchForecast(d);
     const j = fc.j, dl = j.daily || {}, hr = j.hourly || {};
     const idx = (hr.time || []).map((t, i) => [t.slice(11, 13), i]).filter(([h]) => +h >= 8 && +h <= 15).map(([, i]) => i);

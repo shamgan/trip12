@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.4.0';
+const APP_VERSION = '2.4.1';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -38,6 +38,9 @@ function applyOverrides(base, ov) {
 function setPath(obj, path, val) {
   // נתיב כמו routes.amir.about או rules.2.items.3.text – מספרים נספרים מ-1, ובמערכים אפשר גם לפי id
   const parts = String(path).split('.');
+  // אבטחה: רק שדות טקסט של תוכן. לא מזהים, קישורים, תאריכים, תשובות או שדות מערכת.
+  const BLOCK = /^(__proto__|prototype|constructor|id|src|updatesUrl|tripDates|date|unlock|route|day|a|num|type|lat|lon|photos|mapImage|game|extras|forecastPlaces|thresholds|personalGoal|inviteTtlSec|pointsPerCorrect|contentVersion|feedback)$/;
+  if (!/^(days|routes|rules|learn|quiz|checklist|allergy)$/.test(parts[0]) || parts.some(p => BLOCK.test(p)) || String(val).length > 600) return;
   let o = obj;
   const step = (cur, p) => {
     if (Array.isArray(cur)) return /^\d+$/.test(p) ? cur[Number(p) - 1] : cur.find(x => x && x.id === p);
