@@ -226,3 +226,36 @@ body.contrast .hero:after{background:rgba(0,0,0,.6)}
 
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .next p b.at{font-size:1.05rem;color:var(--primary)}
+
+/* game */
+.tile.c-night{background:linear-gradient(135deg,#16213e,#3b2a6b);color:#fff;grid-column:1/-1}
+.gamecard{display:flex;gap:14px;align-items:center;background:linear-gradient(135deg,#16213e,#3b2a6b);color:#fff;border-radius:20px;padding:16px;margin:0 0 16px;text-decoration:none;box-shadow:var(--shadow-2)}
+.gamecard>span{font-size:2.2rem}.gamecard b{font-size:1.25rem;display:block}.gamecard small{font-size:1rem;opacity:.95}
+.sky{width:100%;max-width:420px;display:block;margin:8px auto;border-radius:16px}
+.lostmap{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;border-radius:14px;overflow:hidden;aspect-ratio:3/2;margin:8px 0}
+.lm{background:#e9dcc6 url(maps/eilat.webp);background-size:300% 200%;display:grid;place-items:center;font-size:1.6rem;filter:grayscale(1) opacity(.35)}
+.lm.on{filter:none}
+.qrbox{background:#fff;padding:10px;border-radius:16px;max-width:300px;margin:8px auto}
+.qrbox svg{width:100%;height:auto;display:block}
+.scanbox{border-radius:20px;overflow:hidden;background:#000;aspect-ratio:1/1;max-width:420px;margin:0 auto}
+.scanbox video{width:100%;height:100%;object-fit:cover;display:block}
+.linkbtn{background:none;border:0;color:var(--accent);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;min-height:44px}
+
+.g-intro{font-size:1.1rem;margin:0 0 12px}
+.g-progress{display:flex;gap:10px;margin:0 0 12px}
+.g-progress div{flex:1;background:linear-gradient(135deg,#16213e,#3b2a6b);color:#fff;border-radius:18px;padding:10px 12px;text-align:center;font-size:1rem}
+.g-progress b{font-size:1.9rem;color:#ffd27a;margin-inline-end:4px}
+.g-progress small{display:block;font-size:.9rem;opacity:.95}
+.g-sky .sky{max-width:300px}
+.quiz-opt.chosen{border-color:#8a7a66;background:#f4efe7}
+.opt-tag{font-style:normal;font-size:.85rem;font-weight:800;margin-inline-start:auto;background:#fff;border-radius:8px;padding:2px 8px;color:var(--ink)}
+.row>.btn{flex:1 1 140px}
+.g-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.g-actions .btn{padding:12px 8px;font-size:1.1rem;white-space:nowrap}
+
+.installbtn{background:#fff;color:#8f2f12;border:0;border-radius:999px;padding:6px 12px;min-height:44px;font:inherit;font-size:.85rem;font-weight:800;cursor:pointer;white-space:nowrap}
+.installbtn.on{background:#2b2118;color:#fff}
+.iconbtn.on{background:#fff;color:#8f2f12}
+ul.benefits{padding-inline-start:1.2em;margin:6px 0}ul.benefits li{margin-bottom:8px}
+@media (max-width:430px){.brand img{display:none}.chip{font-size:0;padding:6px 8px}.chip:before{content:attr(data-short);font-size:.95rem}}
+@media (max-width:380px){.installbtn{font-size:.78rem;padding:6px 9px}.brand-title{font-size:1.05rem!important}.topbar{padding-left:8px;padding-right:8px}.top-actions{gap:4px}}

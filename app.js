@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.0.2';
+const APP_VERSION = '2.3.0';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -215,14 +215,14 @@ function viewNow() {
   const t = today(), d = todayDay();
   let h = '';
   const notices = C.notices.map(n => `<div class="strip info" role="note"><b>📣 הודעה מהצוות:</b> ${esc(n)}</div>`).join('');
-  const notSaved = (!navigator.serviceWorker || !navigator.serviceWorker.controller) ? `<div class="strip info"><b>📲 האתר עוד לא שמור בטלפון.</b> השאירו אותו פתוח עם אינטרנט עד שיופיע "✓ ללא רשת". <a href="#install">איך שומרים</a></div>` : '';
+  const notSaved = (!navigator.serviceWorker || !navigator.serviceWorker.controller) ? `<div class="strip info"><b>📲 האתר עוד לא שמור בטלפון.</b> השאירו אותו פתוח עם אינטרנט עד שיופיע "✓ נשמר בטלפון". <a href="#install">איך שומרים</a></div>` : '';
   if (t < C.tripDates.start) {
     const days = Math.round((new Date(C.tripDates.start) - new Date(t)) / 864e5);
     const r = routeOf(C.days[0].route);
     h += heroBlock(r.photos[0].src, r.photos[0].alt, 'לקראת הטיול · הרי אילת', days === 1 ? 'מחר יוצאים!' : `עוד ${days} ימים`);
     h += dayChips(null) + '<div class="pad">' + notices + allergyCard() + notSaved;
     h += `<h2 class="sec-h">היום הראשון</h2>` + nextCard(C.days[0]);
-    h += `<div class="card soft"><h2>לפני שיוצאים</h2><ol class="steps"><li>מחכים שלמעלה יופיע <b>"✓ ללא רשת"</b>.</li><li>מוסיפים למסך הבית (רשות).</li><li>עוברים על הנהלים ועל רשימת הציוד.</li></ol>
+    h += `<div class="card soft"><h2>לפני שיוצאים</h2><ol class="steps"><li>מחכים שלמעלה יופיע <b>"✓ נשמר בטלפון"</b>.</li><li>מוסיפים למסך הבית (רשות).</li><li>עוברים על הנהלים ועל רשימת הציוד.</li></ol>
       <div class="row"><a class="btn" href="#install">📲 שמירה בטלפון</a><a class="btn secondary" href="#checklist">🎒 ציוד</a></div></div>`;
   } else if (d) {
     const r = routeOf(d.route); const n = C.days.indexOf(d) + 1;
@@ -236,7 +236,7 @@ function viewNow() {
     h += heroBlock(r.photos[0].src, r.photos[0].alt, 'הרי אילת · תשפ"ז', 'תודה שטיילתם איתנו!');
     h += '<div class="pad">' + notices + `<div class="card"><p>נשמח לשמוע מה חשבתם על הטיול כולו. המשוב אנונימי לגמרי.</p><a class="btn block" href="#feedback">משוב סיום הטיול</a></div>`;
   }
-  h += photoTiles() + updateCard() + footer() + '</div>';
+  h += photoTiles() + `<a class="gamecard" href="#game"><span aria-hidden="true">✨</span><div><b>שמי המדבר</b><small>משחק שיתופי בזוגות – כל חבר/ה חדש/ה = כוכב</small></div></a>` + updateCard() + footer() + '</div>';
   return h;
 }
 
@@ -336,7 +336,7 @@ function viewMore() {
   const phones = C.phones && C.phones.length ? `<div class="card"><h2>טלפוני הצוות</h2>${C.phones.map(p => `<p><b>${esc(p.name)}:</b> <span dir="ltr">${esc(p.number)}</span></p>`).join('')}</div>` : '';
   const T = (href, e, l, c) => `<a class="tile ${c}" href="#${href}"><i aria-hidden="true">${e}</i><span>${l}</span></a>`;
   return `<h1>עוד</h1><div class="tiles">
-    ${T('routes', '🥾', 'המסלולים', 'c-terra')}${T('learn', '🪨', 'העשרה', 'c-sea')}
+    ${T('game', '✨', 'שמי המדבר – משחק', 'c-night')}${T('routes', '🥾', 'המסלולים', 'c-terra')}${T('learn', '🪨', 'העשרה', 'c-sea')}
     ${T('rules', '📋', 'נהלים', 'c-sun')}${T('checklist', '🎒', 'רשימת ציוד', 'c-sand')}
     ${T('feedback', '💬', 'משוב אנונימי', 'c-sand')}${T('report', '🛠️', 'דיווח על טעות', 'c-sand')}
     ${T('install', '📲', 'התקנה והסרה', 'c-sand')}${T('a11y', '♿', 'נגישות', 'c-sand')}
@@ -389,33 +389,42 @@ function answer(btn) {
 /* ---------- static pages ---------- */
 function viewInstall() {
   const ua = navigator.userAgent; const ios = /iphone|ipad|ipod/i.test(ua); const sel = LS.get('os', ios ? 'ios' : 'android');
-  return `<h1>איך משתמשים באתר</h1>
-  <div class="card ai"><b>השימוש באתר הוא רשות ולא חובה.</b> אין צורך בהתקנה ואין צורך בהרשמה – מספיק לפתוח את הקישור. אפשר, למי שרוצה, להוסיף את האתר למסך הבית כמו אפליקציה.</div>
-  <div class="card"><h2>1. הכנה לשימוש בלי קליטה</h2><ol class="steps">
-    <li>פותחים את האתר פעם אחת כשיש אינטרנט (עדיף בבית, ב-Wi-Fi).</li>
-    <li>מחכים שלמעלה יופיע <b>"✓ ללא רשת"</b> – כלומר האתר שמור בטלפון.</li>
-    <li>בודקים: מעבירים את הטלפון למצב טיסה, סוגרים את האתר ופותחים שוב. אם הוא נפתח – הכול מוכן.</li>
-    <li>באייפון: כדאי לפתוח את האתר גם בערב שלפני הטיול, כדי שהמידע יישמר.</li></ol></div>
+  const installed = isStandalone();
+  return `<h1>📲 התקנה כאפליקציה</h1>
+  ${installed ? `<div class="strip info"><b>✓ האפליקציה כבר מותקנת אצלכם.</b> אפשר לפתוח אותה מהאייקון במסך הבית.</div>` : ''}
+  ${installEvt && !installed ? `<button class="btn block" data-act="doinstall">📲 התקנה עכשיו</button>` : ''}
+  <div class="card"><h2>למה כדאי?</h2><ul class="benefits">
+    <li><b>אייקון במסך הבית</b> – נפתח בלחיצה אחת, במסך מלא, כמו כל אפליקציה.</li>
+    <li><b>עובד בלי קליטה</b> – המפות, הלו"ז, הנהלים, החידון והמשחק שמורים בטלפון.</li>
+    <li><b>קל וחסכוני</b> – לא תופס כמעט מקום, ולא צריך חנות אפליקציות.</li>
+    <li><b>תמיד מעודכן</b> – כשיש קליטה, העדכונים מהצוות מגיעים בלחיצה על "בדוק עדכונים".</li></ul>
+    <p class="small muted">ההתקנה היא רשות. אפשר גם להשתמש בקישור רגיל בדפדפן.</p></div>
+  <div class="card ai"><h2>🔒 בטוח ופרטי</h2><ul class="benefits">
+    <li>זה אתר של בית הספר – לא אפליקציה של חברה חיצונית, בלי פרסומות ובלי מטרות רווח.</li>
+    <li><b>אין הרשמה ואין איסוף מידע.</b> לא מבקשים שם, טלפון או מייל, ושום מידע לא נשלח לאף אחד.</li>
+    <li><b>אין הרשאות מיוחדות.</b> ההתקנה לא מבקשת גישה לשום דבר בטלפון. רק אם תבחרו בעצמכם, הטלפון ישאל: מיקום – כדי להציג אתכם על המפה; מצלמה – כדי לסרוק קוד במשחק. אפשר לסרב, וכל השאר ימשיך לעבוד.</li>
+    <li>אין שיתוף מידע עם גורמים אחרים, אין עוגיות מעקב ואין סטטיסטיקות.</li>
+    <li>בסוף הטיול האתר נסגר, והמידע שנשמר בטלפון נמחק.</li></ul></div>
   <div class="seg" role="group" aria-label="סוג הטלפון"><button data-os="android" aria-pressed="${sel === 'android'}">אנדרואיד</button><button data-os="ios" aria-pressed="${sel === 'ios'}">אייפון</button></div>
   <div class="os ${sel === 'android' ? 'on' : ''}">
-    <div class="card"><h2>2. הוספה למסך הבית (רשות) – אנדרואיד</h2><ol class="steps">
+    <div class="card"><h2>התקנה – אנדרואיד</h2><ol class="steps">
       <li>פותחים את האתר בדפדפן <b>Chrome</b>.</li><li>לוחצים על תפריט שלוש הנקודות ⋮ למעלה.</li>
-      <li>בוחרים <b>"הוספה למסך הבית"</b> או <b>"התקנת אפליקציה"</b> ומאשרים.</li><li>האייקון יופיע במסך הבית.</li></ol></div>
-    <div class="card"><h2>3. הסרה – אנדרואיד</h2><ol class="steps"><li>לחיצה ארוכה על האייקון במסך הבית.</li><li>בוחרים <b>"הסרה"</b> (או גוררים אל "הסר").</li>
-      <li>כדי למחוק גם את המידע השמור: Chrome ← הגדרות ← הגדרות אתרים ← בוחרים את האתר ← "ניקוי והאפסה".</li></ol></div></div>
+      <li>בוחרים <b>"הוספה למסך הבית"</b> או <b>"התקנת אפליקציה"</b> ומאשרים.</li><li>האייקון "טיול י״ב" יופיע במסך הבית.</li></ol></div>
+    <div class="card"><h2>הסרה – אנדרואיד</h2><ol class="steps"><li>לחיצה ארוכה על האייקון במסך הבית.</li><li>בוחרים <b>"הסרה"</b> ומאשרים.</li>
+      <li>למחיקת המידע השמור: Chrome ← ⋮ ← הגדרות ← הגדרות אתרים ← כל האתרים ← בוחרים את האתר ← "ניקוי והאפסה".</li></ol></div></div>
   <div class="os ${sel === 'ios' ? 'on' : ''}">
-    <div class="card"><h2>2. הוספה למסך הבית (רשות) – אייפון</h2><ol class="steps">
+    <div class="card"><h2>התקנה – אייפון</h2><ol class="steps">
       <li>פותחים את האתר בדפדפן <b>Safari</b>.</li>
-      <li>בגרסאות החדשות (iOS 26): לוחצים על כפתור <b>שלוש הנקודות (…)</b> ליד שורת הכתובת, ואז על <b>"שיתוף"</b>. בגרסאות קודמות: לוחצים ישר על כפתור השיתוף (ריבוע עם חץ למעלה).</li>
-      <li>גוללים ובוחרים <b>"הוסף למסך הבית"</b>. לא מופיע? בתחתית הרשימה בוחרים "עריכת פעולות" ומוסיפים אותו.</li>
-      <li>משאירים את האפשרות <b>"פתח כאפליקציית רשת"</b> פעילה, אם היא מופיעה, ולוחצים <b>"הוסף"</b>.</li></ol></div>
-    <div class="card"><h2>3. הסרה – אייפון</h2><ol class="steps"><li>לחיצה ארוכה על האייקון במסך הבית.</li><li>בוחרים <b>"הסר אפליקציה"</b> או <b>"מחק סימניה"</b> ומאשרים.</li>
-      <li>כדי למחוק גם את המידע השמור: הגדרות ← Safari ← מתקדם ← נתוני אתרים ← מחיקת האתר.</li></ol></div></div>
-  <p class="small muted">שמות הכפתורים יכולים להשתנות מעט בין גרסאות של טלפונים ודפדפנים. הסרה מוחקת גם את הניקוד ואת הסימונים השמורים.</p>
-  <div class="card soft"><h2>שאלות נפוצות</h2>
-    <p><b>לא מופיעה אפשרות להוספה למסך הבית?</b> ודאו שפתחתם ב-Chrome (אנדרואיד) או ב-Safari (אייפון). אפשר גם פשוט להשתמש באתר מהדפדפן.</p>
-    <p><b>האתר לא נפתח בלי קליטה?</b> פתחו אותו שוב עם אינטרנט וחכו לסימון "✓ ללא רשת".</p>
-    <p><b>איך מקבלים מידע מעודכן?</b> כשיש קליטה, לוחצים "בדוק עדכונים" במסך "עכשיו".</p></div>${footer()}`;
+      <li>לוחצים על כפתור <b>השיתוף</b> (ריבוע עם חץ למעלה). בגרסאות חדשות: קודם <b>…</b> ליד שורת הכתובת, ואז "שיתוף".</li>
+      <li>גוללים ובוחרים <b>"הוסף למסך הבית"</b>, ולוחצים <b>"הוסף"</b>.</li></ol></div>
+    <div class="card"><h2>הסרה – אייפון</h2><ol class="steps"><li>לחיצה ארוכה על האייקון במסך הבית.</li><li>בוחרים <b>"הסר אפליקציה"</b> או <b>"מחק סימניה"</b> ומאשרים.</li>
+      <li>למחיקת המידע השמור: הגדרות ← Safari ← מתקדם ← נתוני אתרים ← מחיקת האתר.</li></ol></div></div>
+  <div class="card soft"><h2>שימוש בלי קליטה</h2><ol class="steps">
+    <li>פותחים את האתר פעם אחת עם אינטרנט ומחכים לסימון <b>"✓ נשמר בטלפון"</b> למעלה.</li>
+    <li>בודקים: מצב טיסה, סוגרים ופותחים שוב.</li>
+    <li>באייפון כדאי לפתוח גם בערב שלפני הטיול.</li></ol>
+    <p class="small muted">שמות הכפתורים יכולים להשתנות מעט בין דגמים. הסרה מוחקת גם את הניקוד והכוכבים השמורים.</p></div>
+  <button class="btn secondary block" data-act="closeinstall">✕ סגירה</button>${footer()}`;
 }
 function viewA11y() {
   const s = LS.get('a11y', {});
@@ -489,21 +498,45 @@ function toggleGeo(btn) {
   { enableHighAccuracy: true, maximumAge: 15000, timeout: 30000 });
 }
 
+/* ---------- header toggles (נגישות / התקנה) ---------- */
+let backHash = '#now';
+function togglePage(p) {
+  const cur = (location.hash || '#now').slice(1);
+  if (cur === p) location.hash = backHash || '#now';
+  else { if (cur !== 'a11y' && cur !== 'install') backHash = '#' + cur; location.hash = '#' + p; }
+}
+function syncHeaderBtns() {
+  const cur = (location.hash || '#now').slice(1);
+  const a = $('#a11yBtn'), i = $('#installBtn');
+  if (a) { a.setAttribute('aria-expanded', cur === 'a11y'); a.classList.toggle('on', cur === 'a11y'); }
+  if (i) { i.setAttribute('aria-expanded', cur === 'install'); i.classList.toggle('on', cur === 'install'); i.textContent = cur === 'install' ? '✕ סגירה' : '📲 להתקנה כאפליקציה';
+    i.hidden = isStandalone() && cur !== 'install'; }
+}
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if ((location.hash || '').slice(1) === 'install') route(); });
+async function doInstall() {
+  if (!installEvt) return;
+  installEvt.prompt(); const r = await installEvt.userChoice.catch(() => null); installEvt = null;
+  toast(r && r.outcome === 'accepted' ? 'האפליקציה נוספה למסך הבית 🎉' : 'אפשר להתקין גם מאוחר יותר'); route();
+}
+
 /* ---------- router ---------- */
-const TITLES = { now: 'עכשיו', schedule: 'לוח זמנים', maps: 'מפות', quiz: 'חידון', more: 'עוד', routes: 'המסלולים', rules: 'נהלים', learn: 'העשרה', checklist: 'רשימת ציוד', feedback: 'משוב', install: 'התקנה והסרה', report: 'דיווח על טעות', a11y: 'נגישות', about: 'אודות' };
+const TITLES = { now: 'עכשיו', schedule: 'לוח זמנים', maps: 'מפות', quiz: 'חידון', more: 'עוד', routes: 'המסלולים', rules: 'נהלים', learn: 'העשרה', checklist: 'רשימת ציוד', feedback: 'משוב', install: 'התקנה והסרה', report: 'דיווח על טעות', game: 'שמי המדבר', a11y: 'נגישות', about: 'אודות' };
 function route() {
   stopGeo(); zoom = 1;
   if (isEnded()) { $('#main').innerHTML = viewEnded(); document.querySelector('.tabbar').style.display = 'none'; document.title = 'הטיול הסתיים'; return; }
   const h = (location.hash || '#now').slice(1);
   const [page, arg] = h.includes('-') ? [h.slice(0, h.indexOf('-')), h.slice(h.indexOf('-') + 1)] : [h, null];
   const views = { now: viewNow, schedule: viewSchedule, maps: viewMaps, quiz: () => viewQuiz(arg), more: viewMore, routes: viewRoutes, route: () => viewRoute(arg),
-    report: viewReport, rules: viewRules, learn: () => viewLearn(arg), checklist: viewChecklist, feedback: viewFeedback, install: viewInstall, a11y: viewA11y, about: viewAbout };
+    report: viewReport, game: () => window.TripGame.view(arg), rules: viewRules, learn: () => viewLearn(arg), checklist: viewChecklist, feedback: viewFeedback, install: viewInstall, a11y: viewA11y, about: viewAbout };
   const v = views[page] || viewNow;
   $('#main').innerHTML = v();
   document.body.classList.toggle('bleed', page === 'now' || page === 'route' || !views[page]);
   const tab = { now: 'now', schedule: 'schedule', maps: 'maps', quiz: 'quiz' }[page] || 'more';
   document.querySelectorAll('.tabbar a').forEach(a => { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   document.title = (TITLES[page] || 'טיול') + ' · טיול שנתי י"ב';
+  syncHeaderBtns();
 }
 window.addEventListener('hashchange', () => { if (!$('#modal').hidden) $('#modal').hidden = true; route(); window.scrollTo(0, 0); $('#main').focus({ preventScroll: true }); });
 
@@ -519,7 +552,10 @@ document.addEventListener('click', e => {
   if (t.dataset.ans !== undefined && t.classList.contains('quiz-opt')) return answer(t);
   if (t.dataset.os) { LS.set('os', t.dataset.os); return route(); }
   if (t.dataset.fs !== undefined) { const s = LS.get('a11y', {}); s.fs = t.dataset.fs; LS.set('a11y', s); applyA11y(); return route(); }
-  if (t.id === 'a11yBtn') { location.hash = '#a11y'; }
+  if (t.id === 'a11yBtn') return togglePage('a11y');
+  if (t.id === 'installBtn') return togglePage('install');
+  if (t.dataset.act === 'doinstall') return doInstall();
+  if (t.dataset.act === 'closeinstall') return togglePage('install');
 });
 document.addEventListener('change', e => {
   const t = e.target;
@@ -533,14 +569,15 @@ async function netStatus() {
   const chip = $('#netchip'); let ready = false;
   try { ready = !!(await caches.has('trip12-' + APP_VERSION)) && !!navigator.serviceWorker.controller; } catch (e) {}
   const on = navigator.onLine;
-  chip.textContent = ready ? '✓ ללא רשת' : (on ? '⏳ שומר…' : '⚠ אין חיבור');
+  chip.textContent = ready ? '✓ נשמר בטלפון' : (on ? '⏳ שומר…' : '⚠ אין חיבור');
+  chip.dataset.short = ready ? '✓' : (navigator.onLine ? '⏳' : '⚠');
   chip.setAttribute('aria-label', ready ? (on ? 'האתר שמור ומוכן לעבודה ללא אינטרנט' : 'אין חיבור – האתר עובד מהזיכרון') : (on ? 'שומר את האתר לשימוש ללא אינטרנט' : 'אין חיבור לאינטרנט'));
   chip.title = chip.getAttribute('aria-label');
 }
 window.addEventListener('online', netStatus); window.addEventListener('offline', netStatus);
 if ('serviceWorker' in navigator) {
   let hadController = !!navigator.serviceWorker.controller, reloaded = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } hadController = true; });
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } hadController = true; netStatus(); });
   navigator.serviceWorker.addEventListener('message', e => { if (e.data === 'cached') { LS.set('cached', true); netStatus(); } });
   navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => { if (navigator.onLine) reg.update().catch(() => {}); return navigator.serviceWorker.ready; }).then(r => { r.active && r.active.postMessage('check'); }).catch(() => {});
 }
@@ -558,7 +595,7 @@ if ('serviceWorker' in navigator) {
       <li>🤖 האתר והתוכן נבנו בעזרת בינה מלאכותית – ייתכנו טעויות.</li>
       <li>האתר אינו כלי ניווט או בטיחות. הוראות הצוות קודמות תמיד.</li></ul>
       <div class="card notice" style="margin:10px 0 0"><b>📲 כדי שהאתר יעבוד גם בלי קליטה:</b>
-      <ol class="steps" style="margin:6px 0 0"><li>השאירו את האתר פתוח עד שלמעלה יופיע <b>"✓ ללא רשת"</b>.</li>
+      <ol class="steps" style="margin:6px 0 0"><li>השאירו את האתר פתוח עד שלמעלה יופיע <b>"✓ נשמר בטלפון"</b>.</li>
       <li>מומלץ להוסיף למסך הבית: ${/iphone|ipad|ipod/i.test(navigator.userAgent) ? 'ב-Safari: כפתור השיתוף (או … ואז "שיתוף") ← <b>"הוסף למסך הבית"</b>' : 'ב-Chrome: תפריט ⋮ ← <b>"הוספה למסך הבית"</b>'}.</li>
       <li>בדיקה: מצב טיסה, סגירה ופתיחה מחדש.</li></ol>
       <a href="#install">הוראות מלאות (התקנה והסרה)</a></div>
