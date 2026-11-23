@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '1.1.2';
+const APP_VERSION = '1.1.3';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -203,6 +203,7 @@ function viewNow() {
   } else if (t > C.tripDates.end) {
     h += `<div class="card"><h1>תודה שטיילתם איתנו!</h1><p>נשמח לשמוע מה חשבתם על הטיול כולו. המשוב אנונימי לגמרי.</p><a class="btn" href="#feedback">משוב סיום הטיול</a></div>`;
   }
+  if (!navigator.serviceWorker || !navigator.serviceWorker.controller) h += `<div class="card notice"><b>📲 האתר עוד לא שמור בטלפון.</b> השאירו אותו פתוח עם אינטרנט עד שיופיע "✓ ללא רשת". <a href="#install">איך שומרים ומוסיפים למסך הבית</a></div>`;
   h += updateCard();
   h += `<div class="tiles">
     <a class="tile" href="#maps"><span class="e" aria-hidden="true">🗺️</span>מפות</a>
@@ -525,6 +526,11 @@ if ('serviceWorker' in navigator) {
       <li>השימוש רשות. אין הרשמה, ואין איסוף מידע אישי.</li>
       <li>🤖 האתר והתוכן נבנו בעזרת בינה מלאכותית – ייתכנו טעויות.</li>
       <li>האתר אינו כלי ניווט או בטיחות. הוראות הצוות קודמות תמיד.</li></ul>
+      <div class="card notice" style="margin:10px 0 0"><b>📲 כדי שהאתר יעבוד גם בלי קליטה:</b>
+      <ol class="steps" style="margin:6px 0 0"><li>השאירו את האתר פתוח עד שלמעלה יופיע <b>"✓ ללא רשת"</b>.</li>
+      <li>מומלץ להוסיף למסך הבית: ${/iphone|ipad|ipod/i.test(navigator.userAgent) ? 'ב-Safari: כפתור השיתוף (או … ואז "שיתוף") ← <b>"הוסף למסך הבית"</b>' : 'ב-Chrome: תפריט ⋮ ← <b>"הוספה למסך הבית"</b>'}.</li>
+      <li>בדיקה: מצב טיסה, סגירה ופתיחה מחדש.</li></ol>
+      <a href="#install">הוראות מלאות (התקנה והסרה)</a></div>
       <p class="small"><a href="#about">לקריאת ההצהרות המלאות</a></p>`, [['קראתי והבנתי', () => LS.set('agreed', true)]]);
   }
 })();
