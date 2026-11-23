@@ -259,3 +259,41 @@ body.contrast .hero:after{background:rgba(0,0,0,.6)}
 ul.benefits{padding-inline-start:1.2em;margin:6px 0}ul.benefits li{margin-bottom:8px}
 @media (max-width:430px){.brand img{display:none}.chip{font-size:0;padding:6px 8px}.chip:before{content:attr(data-short);font-size:.95rem}}
 @media (max-width:380px){.installbtn{font-size:.78rem;padding:6px 9px}.brand-title{font-size:1.05rem!important}.topbar{padding-left:8px;padding-right:8px}.top-actions{gap:4px}}
+
+/* extras */
+.tiles.two{margin-top:0}
+.tile.c-sea2{background:linear-gradient(135deg,#0b6b74,#13525a);color:#fff}
+.tile.c-night2{background:linear-gradient(135deg,#0b1026,#24315e);color:#fff}
+.tile.c-night{grid-column:auto}
+.more-tiles .tile.c-night:first-child{grid-column:1/-1}
+.card.challenge{background:linear-gradient(135deg,#fff8e6,#fff);border-inline-start:6px solid var(--sun)}
+.ch-text{font-size:1.2rem;font-weight:700;margin:6px 0 12px}
+.card.weather{background:linear-gradient(135deg,#e7f5fb,#fff)}
+.w-row{display:flex;gap:8px;margin:8px 0}.w-big{flex:1;text-align:center;font-size:1.8rem;font-weight:800;color:#0b4f6c;background:#fff;border-radius:14px;padding:6px}
+.w-big small{display:block;font-size:.8rem;color:var(--muted);font-weight:700}
+.w-hours{display:flex;gap:6px;overflow-x:auto;margin:6px 0}.w-hours div{flex:1;min-width:58px;text-align:center;background:#fff;border-radius:12px;padding:6px 4px;font-size:1rem}.w-hours b{display:block;font-size:.85rem;color:var(--muted)}
+.busgame{display:flex;gap:14px;align-items:center;background:#fff;border-radius:20px;padding:16px;margin:0 0 12px;box-shadow:var(--shadow);text-decoration:none;color:var(--ink)}
+.busgame>span{font-size:2.2rem}.busgame b{font-size:1.2rem;display:block}.busgame small{font-size:1rem;color:var(--muted)}
+ol.clues li{font-size:1.15rem;margin-bottom:8px}
+.answer{font-size:1.5rem;font-weight:800;color:var(--sea);margin:10px 0}
+.bigletter{font-size:5rem;font-weight:800;color:var(--primary);line-height:1}
+.xtimer{font-size:2.4rem;font-weight:800;margin:10px 0;font-variant-numeric:tabular-nums}.xtimer.done{color:#9b1c1c;font-size:1.6rem}
+.nightsky{width:100%;display:block;border-radius:14px}
+/* power saver */
+body.saver{--bg:#111;--surface:#1b1b1b;--card:#1e1e1e;--ink:#f2f2f2;--muted:#c8c8c8;--line:#333;--primary:#e0855f;--accent:#6fd3dd;--sea:#6fd3dd;--sea-l:#16302f;--shadow:none;--shadow-2:none}
+body.saver .topbar{background:#000}
+body.saver .hero,body.saver .tile.photo,body.saver .routecard img,body.saver .thumbs,body.saver .gallery{background-image:none!important}
+body.saver .hero{height:140px;background:#222!important}
+body.saver .routecard img,body.saver .thumbs{display:none}
+body.saver .tile.photo{background:#2a2a2a}
+body.saver .card.soft,body.saver .card.notice,body.saver .card.warn,body.saver .card.allergy,body.saver .strip,body.saver .card.challenge,body.saver .card.weather,body.saver .card.ai,body.saver .next,body.saver .routecard,body.saver .busgame,body.saver .daychips a,body.saver .stats div,body.saver .w-big,body.saver .w-hours div,body.saver .quiz-opt,body.saver .tabbar,body.saver .btn.secondary,body.saver .check{background:#1e1e1e;color:var(--ink)}
+body.saver .strip b,body.saver .kicker{color:#ffb08f}
+body.saver *{animation:none!important;transition:none!important}
+/* night red */
+html:has(body.nightred){filter:sepia(1) saturate(6) hue-rotate(-45deg) brightness(.7)}
+body.nightred{background:#000}
+body.saver .installbtn{background:#333;color:#fff}body.saver .chip{background:#333}
+body.saver .btn:not(.secondary){background:#b8461f;border-color:#b8461f;color:#fff}
+body.saver{--primary:#ff9f7a;--sea:#7fe0e8}body.saver .tile.c-sea,body.saver .tile.c-sea2{background:#0b4f56;color:#fff}body.saver .daytabs button[aria-selected="true"],body.saver .seg button[aria-pressed="true"]{background:#b8461f;color:#fff;border-color:#b8461f}body.saver .tabbar a[aria-current="page"]{color:#ffb08f}body.saver .daychips a.on{background:#b8461f}
+body.saver .tabbar a{color:#e6e6e6}body.saver .daytabs button,body.saver .seg button{background:#1e1e1e;color:#ffb08f}body.saver .tile.c-terra{background:#8f2f12;color:#fff}body.saver .tile.c-sun{background:#8a5a0f;color:#fff}
+body.saver .tile.c-sand{background:#1e1e1e;color:#f2f2f2}body.saver .card.allergy h2{color:#ffb08f}

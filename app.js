@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.4.0';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -227,8 +227,8 @@ function viewNow() {
   } else if (d) {
     const r = routeOf(d.route); const n = C.days.indexOf(d) + 1;
     h += heroBlock(r.photos[0].src, r.photos[0].alt, `${esc(d.weekday)} · יום ${n} מתוך ${C.days.length}`, d.title);
-    h += dayChips(d.id) + '<div class="pad">' + notices + (d.id === C.days[0].id ? allergyCard() : '') + notSaved;
-    h += nextCard(d);
+    h += dayChips(d.id) + '<div class="pad">' + notices + window.TripExtras.forecastCard() + (d.id === C.days[0].id ? allergyCard() : '') + notSaved;
+    h += nextCard(d) + window.TripExtras.challengeCard();
     h += `<a class="routecard" href="#route-${r.id}"><img src="${esc((r.photos[1] || r.photos[0]).src)}" alt=""><div><div class="kicker">המסלול של היום</div><b>${badge(r)}${esc(r.name)}</b><span>${esc(r.facts.slice(0, 2).map(f => f[1]).join(' · '))}</span></div></a>`;
     h += `<a class="strip feedback" href="#feedback"><b>💬 משוב יומי</b> – ספרו לנו איך היה. אנונימי לגמרי.</a>`;
   } else {
@@ -236,7 +236,7 @@ function viewNow() {
     h += heroBlock(r.photos[0].src, r.photos[0].alt, 'הרי אילת · תשפ"ז', 'תודה שטיילתם איתנו!');
     h += '<div class="pad">' + notices + `<div class="card"><p>נשמח לשמוע מה חשבתם על הטיול כולו. המשוב אנונימי לגמרי.</p><a class="btn block" href="#feedback">משוב סיום הטיול</a></div>`;
   }
-  h += photoTiles() + `<a class="gamecard" href="#game"><span aria-hidden="true">✨</span><div><b>שמי המדבר</b><small>משחק שיתופי בזוגות – כל חבר/ה חדש/ה = כוכב</small></div></a>` + updateCard() + footer() + '</div>';
+  h += photoTiles() + `<div class="tiles two"><a class="tile c-sea2" href="#bus"><i aria-hidden="true">🚌</i><span>משחקי אוטובוס</span></a><a class="tile c-night" href="#sky"><i aria-hidden="true">🌌</i><span>שמי הלילה</span></a></div><a class="gamecard" href="#game"><span aria-hidden="true">✨</span><div><b>שמי המדבר</b><small>משחק שיתופי בזוגות – כל חבר/ה חדש/ה = כוכב</small></div></a>` + updateCard() + footer() + '</div>';
   return h;
 }
 
@@ -336,7 +336,7 @@ function viewMore() {
   const phones = C.phones && C.phones.length ? `<div class="card"><h2>טלפוני הצוות</h2>${C.phones.map(p => `<p><b>${esc(p.name)}:</b> <span dir="ltr">${esc(p.number)}</span></p>`).join('')}</div>` : '';
   const T = (href, e, l, c) => `<a class="tile ${c}" href="#${href}"><i aria-hidden="true">${e}</i><span>${l}</span></a>`;
   return `<h1>עוד</h1><div class="tiles">
-    ${T('game', '✨', 'שמי המדבר – משחק', 'c-night')}${T('routes', '🥾', 'המסלולים', 'c-terra')}${T('learn', '🪨', 'העשרה', 'c-sea')}
+    ${T('game', '✨', 'שמי המדבר – משחק', 'c-night')}${T('bus', '🚌', 'משחקי אוטובוס', 'c-sea2')}${T('sky', '🌌', 'שמי הלילה', 'c-night2')}${T('routes', '🥾', 'המסלולים', 'c-terra')}${T('learn', '🪨', 'העשרה', 'c-sea')}
     ${T('rules', '📋', 'נהלים', 'c-sun')}${T('checklist', '🎒', 'רשימת ציוד', 'c-sand')}
     ${T('feedback', '💬', 'משוב אנונימי', 'c-sand')}${T('report', '🛠️', 'דיווח על טעות', 'c-sand')}
     ${T('install', '📲', 'התקנה והסרה', 'c-sand')}${T('a11y', '♿', 'נגישות', 'c-sand')}
@@ -434,6 +434,7 @@ function viewA11y() {
     <label class="check"><input type="checkbox" data-a11y="contrast" ${s.contrast ? 'checked' : ''}><span>ניגודיות גבוהה</span></label>
     <label class="check"><input type="checkbox" data-a11y="nomotion" ${s.nomotion ? 'checked' : ''}><span>ביטול אנימציות</span></label>
     <p class="small muted">אפשר גם להגדיל את התצוגה בתנועת צביטה, ולהשתמש בקורא המסך של הטלפון.</p></div>
+  ${window.TripExtras.modesCard()}
   <div class="card"><h2>הצהרת נגישות</h2>
     <p>האתר נבנה במטרה לעמוד בתקן הישראלי 5568 ברמה AA (המבוסס על WCAG 2.0): ניגודיות צבעים, אפשרות להגדלת טקסט, תמיכה בקוראי מסך, טקסט חלופי למפות ולתמונות, ניווט במקלדת, והבחנה בין מסלולים גם במספר ולא רק בצבע.</p>
     <p>האתר הוא מיזם בית ספרי שנבנה בזמן קצר בעזרת בינה מלאכותית, וייתכן שחלקים ממנו עדיין אינם נגישים במלואם. כל המידע החיוני נמסר גם על ידי הצוות, וניתן לקבל אותו בדרך מותאמת, כולל עותק מודפס.</p>
@@ -455,6 +456,7 @@ function viewAbout() {
     <li>בבדיקת עדכונים, הטלפון מוריד תוכן מבית הספר ולא שולח שום מידע. בכל פתיחה עם אינטרנט האתר בודק בשקט רק דבר אחד – אם הצוות הודיע שהטיול הסתיים.</li>
     <li>בסיום הטיול האתר מפסיק לפעול, וכל המידע שנשמר בטלפון נמחק.</li>
     <li>האתר לא משתמש בעוגיות מעקב, בפרסומות או בשירותי סטטיסטיקה.</li>
+    <li>בבוקר ימי הטיול, אם יש קליטה, האתר מוריד תחזית מזג אוויר משירות Open-Meteo – עבור מיקום המסלול הקבוע, לא המיקום שלכם. לא נשלח שום מידע עליכם.</li>
     <li>המשוב אנונימי לחלוטין. לא נאספים שם, מייל או כל פרט מזהה.</li></ul></div>
   <div class="card"><h2>האתר אינו כלי בטיחות</h2><ul>
     <li>האתר נועד להסבר והעשרה בלבד. הוא אינו אמצעי ניווט ואינו כלי בטיחות.</li>
@@ -522,14 +524,14 @@ async function doInstall() {
 }
 
 /* ---------- router ---------- */
-const TITLES = { now: 'עכשיו', schedule: 'לוח זמנים', maps: 'מפות', quiz: 'חידון', more: 'עוד', routes: 'המסלולים', rules: 'נהלים', learn: 'העשרה', checklist: 'רשימת ציוד', feedback: 'משוב', install: 'התקנה והסרה', report: 'דיווח על טעות', game: 'שמי המדבר', a11y: 'נגישות', about: 'אודות' };
+const TITLES = { now: 'עכשיו', schedule: 'לוח זמנים', maps: 'מפות', quiz: 'חידון', more: 'עוד', routes: 'המסלולים', rules: 'נהלים', learn: 'העשרה', checklist: 'רשימת ציוד', feedback: 'משוב', install: 'התקנה והסרה', report: 'דיווח על טעות', game: 'שמי המדבר', bus: 'משחקי אוטובוס', sky: 'שמי הלילה', a11y: 'נגישות', about: 'אודות' };
 function route() {
   stopGeo(); zoom = 1;
   if (isEnded()) { $('#main').innerHTML = viewEnded(); document.querySelector('.tabbar').style.display = 'none'; document.title = 'הטיול הסתיים'; return; }
   const h = (location.hash || '#now').slice(1);
   const [page, arg] = h.includes('-') ? [h.slice(0, h.indexOf('-')), h.slice(h.indexOf('-') + 1)] : [h, null];
   const views = { now: viewNow, schedule: viewSchedule, maps: viewMaps, quiz: () => viewQuiz(arg), more: viewMore, routes: viewRoutes, route: () => viewRoute(arg),
-    report: viewReport, game: () => window.TripGame.view(arg), rules: viewRules, learn: () => viewLearn(arg), checklist: viewChecklist, feedback: viewFeedback, install: viewInstall, a11y: viewA11y, about: viewAbout };
+    report: viewReport, game: () => window.TripGame.view(arg), bus: () => window.TripExtras.viewBus(arg), sky: () => window.TripExtras.viewSky(), rules: viewRules, learn: () => viewLearn(arg), checklist: viewChecklist, feedback: viewFeedback, install: viewInstall, a11y: viewA11y, about: viewAbout };
   const v = views[page] || viewNow;
   $('#main').innerHTML = v();
   document.body.classList.toggle('bleed', page === 'now' || page === 'route' || !views[page]);
