@@ -42,8 +42,11 @@
   function challengeCard() {
     const list = X().challenges || []; if (!list.length) return '';
     const d = new Date(), h = d.getHours();
-    if (h < 7 || h >= 22) return '';
-    const dayIdx = Math.max(0, C.days.findIndex(x => x.date === todayISO()));
+    /* רק בזמן הטיול בשטח – לא בנסיעה הארוכה בהלוך ובחזור */
+    const dayIdx = C.days.findIndex(x => x.date === todayISO()); if (dayIdx < 0) return '';
+    const win = (X().challengeWindows || {})[C.days[dayIdx].id] || ['07:00', '22:00'];
+    const hm = pad(h) + ':' + pad(d.getMinutes());
+    if (hm < win[0] || hm >= win[1]) return '';
     const i = (dayIdx * 16 + h) % list.length;
     const done = S.get('chDone', {}); const key = todayISO() + '-' + h;
     return `<div class="card challenge"><div class="kicker">🎯 האתגר של השעה ${pad(h)}:00–${pad(h + 1)}:00</div><p class="ch-text">${E(list[i])}</p>
