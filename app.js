@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.5.6';
+const APP_VERSION = '2.5.7';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -105,6 +105,19 @@ function sheetToOverrides(rows) {
 
 async function checkUpdates() {
   if (!navigator.onLine) return modal('אין חיבור לאינטרנט', '<p>האתר ממשיך לעבוד עם המידע שכבר שמור בטלפון. נסו שוב כשתהיה קליטה.</p>', [['סגור']]);
+  /* בדיקת גרסה חדשה של האתר עצמו (קוד, מפות, תוכן קבוע) */
+  try {
+    const sw = await fetch('sw.js?t=' + Date.now(), { cache: 'no-store' });
+    const m = sw.ok && (await sw.text()).match(/CACHE\s*=\s*'trip12-([\w.]+)'/);
+    if (m && m[1] !== APP_VERSION) {
+      try { const reg = await navigator.serviceWorker.getRegistration(); reg && reg.update(); } catch (e) {}
+      return modal('יש גרסה חדשה של האתר 🆕', `<p>הגרסה בטלפון: ${esc(APP_VERSION)} · גרסה חדשה: ${esc(m[1])}.</p>
+        <p><b>כדי לקבל אותה:</b> סגרו את האתר לגמרי ופתחו אותו מחדש.</p>
+        <ul class="small"><li><b>אם הותקן כאפליקציה:</b> סוגרים אותו גם מרשימת האפליקציות הפתוחות (מחליקים למעלה) ופותחים שוב מהאייקון.</li>
+        <li><b>אם נפתח בדפדפן:</b> סוגרים את הלשונית ופותחים שוב את הקישור.</li></ul>
+        <p class="small muted">אחרי הפתיחה מחדש לחצו שוב "בדוק עדכונים" כדי לקבל גם את העדכונים מהצוות.</p>`, [['הבנתי']]);
+    }
+  } catch (e) {}
   if (!C.updatesUrl) return modal('אין עדכונים כרגע', '<p>יש לך את הגרסה העדכנית. הצוות מעדכן את האתר מדי פעם.</p>', [['סגור']]);
   try {
     const res = await fetch(C.updatesUrl + (C.updatesUrl.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
