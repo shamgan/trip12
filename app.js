@@ -1,14 +1,19 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.4.1';
+const APP_VERSION = '2.5.0';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
     alt: 'מפת הרי אילת עם שלושת המסלולים: 1 נחל אמיר, 2 הר צפחות, 3 הקניון האדום, כבישים 90 ו-12 ודרכי העפר אל המסלולים.' },
   israel: { title: 'ישראל', img: 'maps/israel.webp', lat0: 33.42, lat1: 29.40, lon0: 34.15, lon1: 36.85, latRef: 31.4, vbW: 768, vbH: 1340,
-    alt: 'מפת ישראל עם הכבישים הראשיים, ערים מרכזיות, רחובות כנקודת היציאה, ואזור אילת מוגדל עם המסלולים וחניון יעלים.' }
-};
+    alt: 'מפת ישראל עם הכבישים הראשיים, ערים מרכזיות, רחובות כנקודת היציאה, ואזור אילת מוגדל עם המסלולים וחניון יעלים.' },
+  red: { title: 'הקניון האדום', img: 'maps/route-red.webp', lat0: 29.70279, lat1: 29.65588, lon0: 34.86203, lon1: 34.90249, latRef: 29.6, vbW: 750, vbH: 1000,
+    alt: 'מפה מפורטת של מסלול 3, הקניון האדום: קו המסלול המעגלי, נקודת ההתחלה והסיום בירוק, וכבישים ודרכי עפר בסביבה.' },
+  amir: { title: 'נחל אמיר והר אמיר', img: 'maps/route-amir.webp', lat0: 29.66042, lat1: 29.61402, lon0: 34.92124, lon1: 34.96127, latRef: 29.6, vbW: 750, vbH: 1000,
+    alt: 'מפה מפורטת של מסלול 1, נחל אמיר והר אמיר: קו המסלול, נקודת התחלה בירוק ונקודת סיום באדום, וכבישים ודרכי עפר בסביבה.' },
+  tzfachot: { title: 'הר צפחות', img: 'maps/route-tzfachot.webp', lat0: 29.54241, lat1: 29.49521, lon0: 34.89384, lon1: 34.93456, latRef: 29.6, vbW: 750, vbH: 1000,
+    alt: 'מפה מפורטת של מסלול 2, הר צפחות: קו המסלול, נקודת התחלה בירוק ונקודת סיום באדום, וכבישים ודרכי עפר בסביבה.' }};
 
 /* ---------- storage helpers (local only) ---------- */
 const LS = {
@@ -265,11 +270,12 @@ function mapViewer(key, opts = {}) {
 }
 function viewMaps() {
   let sel = LS.get('mapSel', 'eilat'); if (!MAPS[sel]) sel = 'eilat';
-  const tabs = [['eilat', 'הרי אילת – המסלולים'], ['israel', 'ישראל']];
+  const tabs = [['eilat', 'הרי אילת'], ['israel', 'ישראל'], ['red', 'יום 1: הקניון האדום'], ['amir', 'יום 2: נחל אמיר'], ['tzfachot', 'יום 3: הר צפחות']];
   const m = MAPS[sel];
   const body = mapViewer(sel, { img: m.img, alt: m.alt, geo: true, credit: 'נתוני גבולות וחוף: © OpenStreetMap contributors, Natural Earth. תוואי המסלולים מבוסס על מפות סימון שבילים. המפה להתמצאות בלבד – לא לניווט.' });
   return `<h1>מפות</h1><div class="seg" role="group" aria-label="בחירת מפה">${tabs.map(([k, l]) => `<button data-map="${k}" aria-pressed="${k === sel}">${esc(l)}</button>`).join('')}</div>
     ${sel === 'eilat' ? '<p class="small">מסלול 1: נחל אמיר · מסלול 2: הר צפחות · מסלול 3: הקניון האדום</p>' : ''}
+    ${routeOf(sel) ? `<p class="small"><span style="color:#2e7d32" aria-hidden="true">●</span> ירוק: נקודת התחלה${sel === 'red' ? ' וסיום (מסלול מעגלי)' : ' · <span style="color:#c62828" aria-hidden="true">●</span> אדום: נקודת סיום'} · קו מקווקו: דרך עפר. התוואי מקורב.</p>` : ''}
     ${body}<p class="small muted">המיקום מוצג רק בטלפון שלך ולא נשלח לאף אחד. ה-GPS עובד גם בלי קליטה, אבל צורך סוללה – כבו אותו כשלא צריך.</p>${footer()}`;
 }
 function viewRoutes() {
@@ -481,6 +487,55 @@ function setZoom(dz) {
   requestAnimationFrame(() => { wrap.scrollLeft = cx * inner.offsetWidth - wrap.clientWidth / 2; wrap.scrollTop = cy * inner.offsetHeight - wrap.clientHeight / 2; });
   if (old !== zoom) toast(zoom === 1 ? 'תצוגה מלאה' : `הגדלה ×${zoom}`);
 }
+/* ---------- התקדמות במסלול / זמן נסיעה משוער (מחושב בטלפון בלבד, הערכה גסה) ---------- */
+const TRACKS = {"amir":[[29.64962,34.94307],[29.64701,34.94271],[29.6444,34.9417],[29.64257,34.93962],[29.64231,34.93813],[29.6397,34.93873],[29.63709,34.93962],[29.63448,34.94051],[29.63186,34.9414],[29.62925,34.94259],[29.62717,34.94378],[29.62482,34.94437]],"tzfachot":[[29.52787,34.91072],[29.52523,34.90874],[29.52306,34.90685],[29.51807,34.90627],[29.51666,34.90801],[29.51334,34.90816],[29.51244,34.9102],[29.51154,34.91136],[29.51052,34.91267],[29.51154,34.91457],[29.51142,34.91617],[29.50975,34.91879],[29.51039,34.92068],[29.51026,34.92214]],"red":[[29.67925,34.87445],[29.68099,34.87505],[29.68185,34.87584],[29.68212,34.87702],[29.68168,34.87821],[29.68168,34.88019],[29.68064,34.88098],[29.68029,34.88216],[29.68133,34.88375],[29.6829,34.88454],[29.68324,34.88592],[29.6829,34.88632],[29.68185,34.88572],[29.68064,34.88651],[29.6789,34.8873],[29.67968,34.88829],[29.6796,34.88928],[29.67838,34.89007],[29.67734,34.88948],[29.67838,34.88829],[29.67873,34.8875],[29.67873,34.88651],[29.67873,34.88493],[29.67716,34.88414],[29.67647,34.88197],[29.67682,34.87979],[29.6763,34.87821],[29.67543,34.87742],[29.6763,34.87722],[29.67734,34.87603],[29.67838,34.87554],[29.67925,34.87445]]};
+const STOPS = {
+  d1: [['עבדת', '10:00', 30.7935, 34.7733], ['הקניון האדום', '15:00', 29.67925, 34.87445], ['חאן יעלים', '24:00', 29.887, 35.062]],
+  d2: [['תחילת מסלול נחל אמיר', '15:00', 29.64962, 34.94307], ['יטבתה', '17:00', 29.886, 35.06], ['חאן יעלים', '24:00', 29.887, 35.062]],
+  d3: [['תחילת מסלול הר צפחות', '11:30', 29.52787, 34.91072], ['אום רשרש', '13:30', 29.5525, 34.9556], ['אייס מול', '17:00', 29.5545, 34.9615], ['בית הספר ברחובות', '24:00', 31.895, 34.81]]
+};
+function kmBetween(a, b) {
+  const k = Math.PI / 180, x = (b[1] - a[1]) * k * Math.cos((a[0] + b[0]) / 2 * k), y = (b[0] - a[0]) * k;
+  return Math.hypot(x, y) * 6371;
+}
+function trackProgress(p) {
+  let best = null;
+  for (const [id, pts] of Object.entries(TRACKS)) {
+    let along = 0, b = null;
+    for (let i = 1; i < pts.length; i++) {
+      const A = pts[i - 1], B = pts[i], seg = kmBetween(A, B);
+      const ky = 111.2, kx = 111.2 * Math.cos(A[0] * Math.PI / 180);
+      const vx = (B[1] - A[1]) * kx, vy = (B[0] - A[0]) * ky, wx = (p[1] - A[1]) * kx, wy = (p[0] - A[0]) * ky;
+      const s = Math.max(0, Math.min(1, (vx * wx + vy * wy) / ((vx * vx + vy * vy) || 1)));
+      const d = Math.hypot(wx - s * vx, wy - s * vy);
+      if (!b || d < b.d) b = { d, at: along + s * seg };
+      along += seg;
+    }
+    if (!best || b.d < best.d) best = { id, d: b.d, at: b.at, total: along };
+  }
+  return best;
+}
+function etaText(min) {
+  if (min < 50) return `כ-${Math.max(10, Math.round(min / 10) * 10)} דקות`;
+  const q = Math.round(min / 30) / 2, h = Math.floor(q), half = q - h;
+  if (h === 1) return half ? 'כשעה וחצי' : 'כשעה';
+  if (h === 2 && !half) return 'כשעתיים';
+  return `כ-${h}${half ? ' וחצי' : ''} שעות`;
+}
+function whereInfo(la, lo) {
+  const p = [la, lo], tp = trackProgress(p);
+  if (tp && tp.d < 0.3) {
+    const r = routeOf(tp.id), pct = Math.min(100, Math.round(tp.at / tp.total * 10) * 10);
+    return `🥾 ${r ? esc(r.name) + ': ' : ''}עברנו בערך ${pct}% מהמסלול. (הערכה בלבד. בדרך יש עצירות הדרכה, ולכן אין כאן זמן לסיום. המדריך יודע כמה נשאר באמת.)`;
+  }
+  const now = new Date(), iso = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  const day = C.days.find(d => d.date === iso), list = day && STOPS[day.id]; if (!list) return '';
+  const hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  const st = list.find(s => hm < s[1]) || list[list.length - 1];
+  const km = kmBetween(p, [st[2], st[3]]);
+  if (km < 2) return `📍 אתם באזור ${esc(st[0])}.`;
+  return `🚌 זמן נסיעה משוער עד ${esc(st[0])}: ${etaText(km * 1.3 / 65 * 60)}. (הערכה גסה לפי המרחק, בלי עצירות ופקקים.)`;
+}
 function stopGeo() { if (geoWatch !== null) { navigator.geolocation.clearWatch(geoWatch); geoWatch = null; } }
 function toggleGeo(btn) {
   const key = btn.dataset.geo, m = MAPS[key], msg = $('#geomsg'), dot = $('#geodot');
@@ -496,9 +551,10 @@ function toggleGeo(btn) {
     const { latitude: la, longitude: lo, accuracy } = p.coords;
     const kx = (m.vbH / (m.lat0 - m.lat1)) * Math.cos(m.latRef * Math.PI / 180);
     const x = (lo - m.lon0) * kx / m.vbW, y = (m.lat0 - la) / (m.lat0 - m.lat1);
-    if (x < 0 || x > 1 || y < 0 || y > 1) { dot.hidden = true; msg.textContent = 'המיקום שלך מחוץ לתחום המפה הזאת.'; return; }
+    if (x < 0 || x > 1 || y < 0 || y > 1) { dot.hidden = true; const info = whereInfo(la, lo), html = 'המיקום שלך מחוץ לתחום המפה הזאת.' + (info ? '<br>' + info : ''); if (msg.dataset.last !== html) { msg.dataset.last = html; msg.innerHTML = html; } return; }
     dot.hidden = false; dot.style.left = (x * 100) + '%'; dot.style.top = (y * 100) + '%';
-    msg.textContent = `המיקום שלך מסומן בנקודה כחולה (דיוק של כ-${Math.round(accuracy)} מ').`;
+    const info = whereInfo(la, lo), html = `המיקום שלך מסומן בנקודה כחולה (דיוק של כ-${Math.round(accuracy)} מ').${info ? '<br>' + info : ''}`;
+    if (msg.dataset.last !== html) { msg.dataset.last = html; msg.innerHTML = html; }
   }, err => { msg.textContent = err.code === 1 ? 'לא ניתן אישור לגישה למיקום. אפשר לשנות זאת בהגדרות הטלפון.' : 'לא הצלחנו לאתר מיקום כרגע. נסו שוב בשטח פתוח.'; stopGeo(); btn.setAttribute('aria-pressed', 'false'); btn.textContent = '📍 הצג את המיקום שלי'; },
   { enableHighAccuracy: true, maximumAge: 15000, timeout: 30000 });
 }
@@ -551,7 +607,7 @@ document.addEventListener('click', e => {
   if (t.dataset.day) { LS.set('schedDay', t.dataset.day); return route(); }
   if (t.dataset.goday) { LS.set('schedDay', t.dataset.goday); }
   if (t.dataset.map) { LS.set('mapSel', t.dataset.map); return route(); }
-  if (t.dataset.openmap) { LS.set('mapSel', 'eilat'); location.hash = '#maps'; return; }
+  if (t.dataset.openmap) { LS.set('mapSel', MAPS[t.dataset.openmap] ? t.dataset.openmap : 'eilat'); location.hash = '#maps'; return; }
   if (t.dataset.zoom) return setZoom(+t.dataset.zoom);
   if (t.dataset.geo) return toggleGeo(t);
   if (t.dataset.ans !== undefined && t.classList.contains('quiz-opt')) return answer(t);
