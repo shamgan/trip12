@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.5.7';
+const APP_VERSION = '2.5.8';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -98,6 +98,7 @@ function sheetToOverrides(rows) {
     else if (type === 'checklist' && value) ov.checklist.push(value);
     else if (type === 'phone' && key && value) ov.phones.push({ name: key, number: value });
     else if (type === 'feedback' && key && /^https:\/\//.test(value)) ov.feedback[key] = value;
+    else if (type === 'feedback' && key === 'dayField' && /^entry\.\d+$/.test(value)) ov.feedback.dayField = value;
     else if (type === 'fix' && key && value) ov.fixes.push([key, value]);
   });
   return ov;
@@ -342,10 +343,23 @@ function viewChecklist() {
     `</div>${updateCard()}${footer()}`;
 }
 
+/* משוב: כל משוב פתוח לאורך כל היום שלו בלבד. משוב הסיום – מהיום האחרון והלאה.
+   אפשר קישור נפרד לכל יום (feedback,d1,...) או טופס אחד (feedback,form,...) עם שדה יום שממולא אוטומטית (feedback,dayField,entry.123) */
+function feedbackLink(k, label) {
+  const own = C.feedback[k]; if (own) return own;
+  const f = C.feedback.form; if (!f) return '';
+  const fld = C.feedback.dayField;
+  return fld ? f + (f.includes('?') ? '&' : '?') + 'usp=pp_url&' + encodeURIComponent(fld) + '=' + encodeURIComponent(label) : f;
+}
 function viewFeedback() {
-  const items = [...C.days.map((d, i) => [d.id, `משוב יום ${i + 1} – ${d.title}`]), ['final', 'משוב סיום הטיול']];
+  const t = today(), last = C.days[C.days.length - 1].date;
+  const items = [...C.days.map((d, i) => [d.id, `משוב יום ${i + 1} – ${d.title}`, `יום ${i + 1}`, d.date === t, d.date > t ? `ייפתח ביום ${i + 1} (${fmtDate(d.date)})` : 'המשוב של היום הזה נסגר. תודה!']),
+    ['final', 'משוב סיום הטיול', 'סיום הטיול', t >= last, `ייפתח ביום האחרון (${fmtDate(last)})`]];
+  const card = ([k, l, lab, open, why]) => { const u = open ? feedbackLink(k, lab) : '';
+    return `<div class="card ${open ? '' : 'soft'}"><h2>${esc(l)}</h2>${open ? (u ? `<a class="btn" href="${esc(u)}" target="_blank" rel="noopener">פתיחת טופס המשוב</a>` : '<p class="muted">הקישור יפורסם בקרוב. בדקו עדכונים מאוחר יותר.</p>') : `<p class="muted">${esc(why)}</p>`}</div>`; };
+  const open = items.filter(x => x[3]), closed = items.filter(x => !x[3]);
   return `<h1>משוב</h1><div class="card ai"><b>המשוב אנונימי לחלוטין.</b> לא נאספים שם, מייל או כל פרט מזהה. אנא אל תכתבו במשוב פרטים מזהים – שלכם או של אחרים.<br>שליחת משוב דורשת חיבור לאינטרנט.</div>` +
-    items.map(([k, l]) => { const u = C.feedback[k]; return `<div class="card"><h2>${esc(l)}</h2>${u ? `<a class="btn" href="${esc(u)}" target="_blank" rel="noopener">פתיחת טופס המשוב</a>` : '<p class="muted">הקישור יפורסם בקרוב. בדקו עדכונים מאוחר יותר.</p>'}</div>`; }).join('') + updateCard() + footer();
+    (open.length ? open.map(card).join('') : '<div class="card"><p>כל משוב נפתח ביום שלו בטיול.</p></div>') + closed.map(card).join('') + updateCard() + footer();
 }
 
 function viewReport() {
