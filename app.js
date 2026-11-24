@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.7.4';
+const APP_VERSION = '2.7.5';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -266,7 +266,8 @@ function viewNow() {
 }
 
 function viewSchedule() {
-  const sel = LS.get('schedDay', (todayDay() || C.days[0]).id);
+  /* בחירת יום נזכרת רק לאותו תאריך – בכל יום חדש הלו"ז נפתח על היום הנוכחי */
+  const sd = LS.get('schedDay', null), sel = (sd && sd.on === today()) ? sd.id : (todayDay() || C.days[0]).id;
   const d = C.days.find(x => x.id === sel) || C.days[0];
   return `<h1>לוח זמנים</h1>
     <div class="daytabs" role="tablist" aria-label="בחירת יום">${C.days.map((x, i) => `<button role="tab" aria-selected="${x.id === d.id}" data-day="${x.id}">יום ${i + 1}<span class="sub">${fmtDate(x.date)}</span></button>`).join('')}</div>
@@ -668,8 +669,8 @@ document.addEventListener('click', e => {
   const t = e.target.closest('button, [data-act], [data-goday]'); if (!t) return;
   if (t.dataset.act === 'update') return checkUpdates();
   if (t.dataset.act === 'fbsend') return fbSubmit(t.dataset.k, t.dataset.lab);
-  if (t.dataset.day) { LS.set('schedDay', t.dataset.day); return route(); }
-  if (t.dataset.goday) { LS.set('schedDay', t.dataset.goday); }
+  if (t.dataset.day) { LS.set('schedDay', { id: t.dataset.day, on: today() }); return route(); }
+  if (t.dataset.goday) { LS.set('schedDay', { id: t.dataset.goday, on: today() }); }
   if (t.dataset.map) { LS.set('mapSel', t.dataset.map); return route(); }
   if (t.dataset.openmap) { LS.set('mapSel', MAPS[t.dataset.openmap] ? t.dataset.openmap : 'eilat'); location.hash = '#maps'; return; }
   if (t.dataset.zoom) return setZoom(+t.dataset.zoom);
