@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.5.9';
+const APP_VERSION = '2.6.0';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -255,11 +255,11 @@ function viewNow() {
     h += dayChips(d.id) + '<div class="pad">' + notices + window.TripExtras.forecastCard() + (d.id === C.days[0].id ? allergyCard() : '') + notSaved;
     h += nextCard(d) + window.TripExtras.challengeCard();
     h += `<a class="routecard" href="#route-${r.id}"><img src="${esc((r.photos[1] || r.photos[0]).src)}" alt=""><div><div class="kicker">המסלול של היום</div><b>${badge(r)}${esc(r.name)}</b><span>${esc(r.facts.slice(0, 2).map(f => f[1]).join(' · '))}</span></div></a>`;
-    h += `<a class="strip feedback" href="#feedback"><b>💬 משוב יומי</b> – ספרו לנו איך היה. אנונימי לגמרי.</a>`;
+    h += `<a class="strip feedback" href="#feedback"><b>💬 משוב יומי</b> – ספרו לנו איך היה. בלי שמות.</a>`;
   } else {
     const r = routeOf('tzfachot');
     h += heroBlock(r.photos[0].src, r.photos[0].alt, 'הרי אילת · תשפ"ז', 'תודה שטיילתם איתנו!');
-    h += '<div class="pad">' + notices + `<div class="card"><p>נשמח לשמוע מה חשבתם על הטיול כולו. המשוב אנונימי לגמרי.</p><a class="btn block" href="#feedback">משוב סיום הטיול</a></div>`;
+    h += '<div class="pad">' + notices + `<div class="card"><p>נשמח לשמוע מה חשבתם על הטיול כולו. בלי שמות.</p><a class="btn block" href="#feedback">משוב סיום הטיול</a></div>`;
   }
   h += photoTiles() + `<div class="tiles two"><a class="tile c-sea2" href="#bus"><i aria-hidden="true">🚌</i><span>משחקי אוטובוס</span></a><a class="tile c-night" href="#sky"><i aria-hidden="true">🌌</i><span>שמי הלילה</span></a></div><a class="gamecard" href="#game"><span aria-hidden="true">✨</span><div><b>שמי המדבר</b><small>משחק שיתופי בזוגות – כל חבר/ה חדש/ה = כוכב</small></div></a>` + updateCard() + footer() + '</div>';
   return h;
@@ -356,9 +356,9 @@ function viewFeedback() {
   const items = [...C.days.map((d, i) => [d.id, `משוב יום ${i + 1} – ${d.title}`, `יום ${i + 1}`, d.date === t, d.date > t ? `ייפתח ביום ${i + 1} (${fmtDate(d.date)})` : 'המשוב של היום הזה נסגר. תודה!']),
     ['final', 'משוב סיום הטיול', 'סיום הטיול', t >= last, `ייפתח ביום האחרון (${fmtDate(last)})`]];
   const card = ([k, l, lab, open, why]) => { const u = open ? feedbackLink(k, lab) : '';
-    return `<div class="card ${open ? '' : 'soft'}"><h2>${esc(l)}</h2>${open ? (u ? `<a class="btn" href="${esc(u)}" target="_blank" rel="noopener">פתיחת טופס המשוב</a>` : '<p class="muted">הקישור יפורסם בקרוב. בדקו עדכונים מאוחר יותר.</p>') : `<p class="muted">${esc(why)}</p>`}</div>`; };
+    return `<div class="card ${open ? '' : 'soft'}"><h2>${esc(l)}</h2>${open ? (u ? `<a class="btn" href="${esc(u)}" target="_blank" rel="noopener">פתיחת המשוב</a>` : '<p class="muted">הקישור יפורסם בקרוב. בדקו עדכונים מאוחר יותר.</p>') : `<p class="muted">${esc(why)}</p>`}</div>`; };
   const open = items.filter(x => x[3]), closed = items.filter(x => !x[3]);
-  return `<h1>משוב</h1><div class="card ai"><b>המשוב אנונימי לחלוטין.</b> לא נאספים שם, מייל או כל פרט מזהה. אנא אל תכתבו במשוב פרטים מזהים – שלכם או של אחרים.<br>שליחת משוב דורשת חיבור לאינטרנט.</div>` +
+  return `<h1>משוב</h1><div class="card ai"><b>לא כותבים שמות.</b> המשוב נכתב בגיליון משותף, בשורה ריקה. אל תכתבו פרטים מזהים – שלכם או של אחרים, ואל תשנו שורות של אחרים.<br><b>שימו לב:</b> אם הטלפון מחובר לחשבון Google, ייתכן שהשם שלכם יוצג לצוות. כדי להישאר אנונימיים – פתחו את הקישור בחלון גלישה בסתר (Incognito).<br>שליחת משוב דורשת חיבור לאינטרנט.</div>` +
     (open.length ? open.map(card).join('') : '<div class="card"><p>כל משוב נפתח ביום שלו בטיול.</p></div>') + closed.map(card).join('') + updateCard() + footer();
 }
 
@@ -377,7 +377,7 @@ function viewMore() {
   return `<h1>עוד</h1><div class="tiles">
     ${T('game', '✨', 'שמי המדבר – משחק', 'c-night')}${T('bus', '🚌', 'משחקי אוטובוס', 'c-sea2')}${T('sky', '🌌', 'שמי הלילה', 'c-night2')}${T('routes', '🥾', 'המסלולים', 'c-terra')}${T('learn', '🪨', 'העשרה', 'c-sea')}
     ${T('rules', '📋', 'נהלים', 'c-sun')}${T('checklist', '🎒', 'רשימת ציוד', 'c-sand')}
-    ${T('feedback', '💬', 'משוב אנונימי', 'c-sand')}${T('report', '🛠️', 'דיווח על טעות', 'c-sand')}
+    ${T('feedback', '💬', 'משוב', 'c-sand')}${T('report', '🛠️', 'דיווח על טעות', 'c-sand')}
     ${T('install', '📲', 'התקנה והסרה', 'c-sand')}${T('a11y', '♿', 'נגישות', 'c-sand')}
     ${T('about', 'ℹ️', 'אודות והצהרות', 'c-sand')}</div><br>${phones}${updateCard()}${footer()}`;
 }
@@ -496,7 +496,7 @@ function viewAbout() {
     <li>בסיום הטיול האתר מפסיק לפעול, וכל המידע שנשמר בטלפון נמחק.</li>
     <li>האתר לא משתמש בעוגיות מעקב, בפרסומות או בשירותי סטטיסטיקה.</li>
     <li>בבוקר ימי הטיול, אם יש קליטה, האתר מוריד תחזית מזג אוויר משירות Open-Meteo – עבור מיקום המסלול הקבוע, לא המיקום שלכם. לא נשלח שום מידע עליכם.</li>
-    <li>המשוב אנונימי לחלוטין. לא נאספים שם, מייל או כל פרט מזהה.</li></ul></div>
+    <li>במשוב לא כותבים שמות. בגיליון המשוב Google עשוי להציג לצוות שם של מי שמחובר לחשבון – אפשר לפתוח בגלישה בסתר.</li></ul></div>
   <div class="card"><h2>האתר אינו כלי בטיחות</h2><ul>
     <li>האתר נועד להסבר והעשרה בלבד. הוא אינו אמצעי ניווט ואינו כלי בטיחות.</li>
     <li>המפות להתמצאות בלבד, ואינן מדויקות לניווט בשטח.</li>
