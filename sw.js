@@ -1,5 +1,5 @@
 /* Service worker: שומר את כל קבצי האתר בטלפון לשימוש ללא אינטרנט. לא אוסף ולא שולח מידע. */
-const CACHE = 'trip12-2.6.1';
+const CACHE = 'trip12-2.6.2';
 const ASSETS = ['./', 'index.html', 'styles.css', 'app.js', 'game.js', 'extras.js', 'lib/qrcode.min.js', 'lib/jsQR.min.js', 'manifest.webmanifest', 'data/content.json',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   'maps/eilat.webp', 'maps/israel.webp', 'maps/route-red.webp', 'maps/route-amir.webp', 'maps/route-tzfachot.webp',
