@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.7.0';
+const APP_VERSION = '2.7.1';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -98,7 +98,7 @@ function sheetToOverrides(rows) {
     else if (type === 'checklist' && value) ov.checklist.push(value);
     else if (type === 'phone' && key && value) ov.phones.push({ name: key, number: value });
     else if (type === 'feedback' && key && /^https:\/\//.test(value)) ov.feedback[key] = value;
-    else if (type === 'feedback' && key === 'fields' && /^entry\.\d+(,entry\.\d+){4}$/.test(value.replace(/\s/g, ''))) ov.feedback.fields = value.replace(/\s/g, '');
+    else if (type === 'feedback' && key === 'fields' && /^entry\.\d+(,entry\.\d+){5}$/.test(value.replace(/\s/g, ''))) ov.feedback.fields = value.replace(/\s/g, '');
     else if (type === 'fix' && key && value) ov.fixes.push([key, value]);
   });
   return ov;
@@ -348,7 +348,7 @@ function viewChecklist() {
 /* משוב בתוך האתר: התלמיד כותב כאן, והאתר שולח לטופס Google של הצוות (התשובות נכנסות לגיליון).
    אין שם, אין מייל, בלי עוגיות (credentials: omit). בלי קליטה – נשמר בטלפון ונשלח אוטומטית כשיש רשת. */
 const FB_POST = /^https:\/\/docs\.google\.com\/forms\/d\/e\/[\w-]+\/formResponse$/;
-function fbReady() { const f = C.feedback || {}; return FB_POST.test(f.post || '') && String(f.fields || '').split(',').filter(Boolean).length === 5; }
+function fbReady() { const f = C.feedback || {}; return FB_POST.test(f.post || '') && String(f.fields || '').split(',').filter(Boolean).length === 6; }
 async function fbFlush() {
   const q = LS.get('fbQueue', []); if (!q.length || !navigator.onLine || !fbReady()) return;
   const fields = String(C.feedback.fields).split(','); const left = [];
@@ -367,8 +367,8 @@ function fbSubmit(k, lab) {
   const f = document.querySelector(`form[data-fb="${k}"]`); if (!f) return;
   const rate = (f.querySelector('input[name=rate]:checked') || {}).value || '';
   const txt = n => f.querySelector(`[name=${n}]`).value.trim().slice(0, 600);
-  const v = [lab, rate, txt('best'), txt('improve'), txt('more')];
-  if (!rate && !v[2] && !v[3] && !v[4]) return toast('כתבו משהו לפני השליחה 🙂');
+  const v = [lab, rate, txt('best'), txt('improve'), txt('more'), txt('gripe')];
+  if (!rate && !v[2] && !v[3] && !v[4] && !v[5]) return toast('כתבו משהו לפני השליחה 🙂');
   const q = LS.get('fbQueue', []).filter(x => x.k !== k); q.push({ k, v }); LS.set('fbQueue', q);
   const sent = LS.get('fbSent', {}); sent[k] = 'queued'; LS.set('fbSent', sent);
   toast(navigator.onLine && fbReady() ? 'שולחים… תודה!' : 'נשמר בטלפון – יישלח אוטומטית כשתהיה קליטה');
@@ -382,7 +382,7 @@ function fbForm(k, lab) {
   return `<form data-fb="${k}" class="fb-form" onsubmit="return false">
     <fieldset class="fb-rate"><legend>כמה נהניתם? (1 – בכלל לא, 5 – מאוד)</legend>
       ${[1, 2, 3, 4, 5].map(n => `<label><input type="radio" name="rate" value="${n}"><span>${n}</span></label>`).join('')}</fieldset>
-    ${ta('best', 'מה היה הכי טוב?')}${ta('improve', 'מה כדאי לשפר?')}${ta('more', 'עוד משהו שתרצו לספר?')}
+    ${ta('best', 'מה היה הכי טוב?')}${ta('improve', 'מה כדאי לשפר?')}${ta('more', 'עוד משהו שתרצו לספר?')}${ta('gripe', 'וכאן המקום לכל מי שרוצים גם סתם להתלונן באופן כללי (-: <span class="muted">(רשות)</span>')}
     <button type="button" class="btn block" data-act="fbsend" data-k="${k}" data-lab="${esc(lab)}">שליחת המשוב</button></form>`;
 }
 function viewFeedback() {
