@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.5.5';
+const APP_VERSION = '2.5.6';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -31,7 +31,10 @@ let geoWatch = null;
 function applyOverrides(base, ov) {
   const c = JSON.parse(JSON.stringify(base));
   if (!ov) return c;
-  if (ov.schedule) c.days.forEach(d => { if (ov.schedule[d.id] && ov.schedule[d.id].length) d.items = ov.schedule[d.id]; });
+  /* לו"ז מהגיליון גובר, אלא אם הוא עדיין מכיל שורה ישנה שידוע שהוחלפה (staleSheet) – אז נשאר הלו"ז המעודכן מהאתר עד שהגיליון יתוקן */
+  const stale = base.staleSheet || {};
+  if (ov.schedule) c.days.forEach(d => { const it = ov.schedule[d.id];
+    if (it && it.length && !(stale[d.id] && it.some(x => x.text === stale[d.id][0] && x.time === stale[d.id][1]))) d.items = it; });
   if (ov.notices) c.notices = ov.notices;
   if (ov.checklist && ov.checklist.length) c.checklist = ov.checklist;
   if (ov.phones) c.phones = ov.phones;

@@ -3,6 +3,7 @@
   "updatedAt": "2026-11-22",
   "tripName": "טיול שנתי י\"ב תשפ\"ז",
   "producer": "מגמת גאוגרפיה, תיכון דה-שליט",
+  "staleSheet": { "d1": ["יציאה לדרך", "07:00"] },
   "updatesUrl": "https://docs.google.com/spreadsheets/d/1_9PY7jroPui6ZcJXle_BssBgFzCGoKnEOgZCWMjys_Y/gviz/tq?tqx=out:csv&headers=1",
   "tripDates": {
     "start": "2026-11-24",
@@ -33,7 +34,7 @@
           "text": "יוצאים מעבדת – כשעתיים נסיעה לקניון האדום"
         },
         {
-          "time": "12:05",
+          "time": "12:00",
           "text": "מסלול: הקניון האדום ונחל שני דרומי (שעה משוערת)"
         },
         {
