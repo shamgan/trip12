@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.6.2';
+const APP_VERSION = '2.7.0';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -59,7 +59,7 @@ function setPath(obj, path, val) {
   if (Array.isArray(o) && /^\d+$/.test(last)) { const i = Number(last) - 1; if (i >= 0 && i < o.length && typeof o[i] !== 'object') o[i] = val; return; }
   if (o && typeof o === 'object' && last in o && typeof o[last] !== 'object') o[last] = val;
 }
-function rebuild() { C = applyOverrides(BASE, LS.get('overrides', null)); }
+function rebuild() { C = applyOverrides(BASE, LS.get('overrides', null)); setTimeout(() => { try { fbFlush(); } catch (e) {} }, 800); }
 
 /* CSV parser (handles quotes) */
 function parseCSV(text) {
@@ -98,7 +98,7 @@ function sheetToOverrides(rows) {
     else if (type === 'checklist' && value) ov.checklist.push(value);
     else if (type === 'phone' && key && value) ov.phones.push({ name: key, number: value });
     else if (type === 'feedback' && key && /^https:\/\//.test(value)) ov.feedback[key] = value;
-    else if (type === 'feedback' && key === 'dayField' && /^entry\.\d+$/.test(value)) ov.feedback.dayField = value;
+    else if (type === 'feedback' && key === 'fields' && /^entry\.\d+(,entry\.\d+){4}$/.test(value.replace(/\s/g, ''))) ov.feedback.fields = value.replace(/\s/g, '');
     else if (type === 'fix' && key && value) ov.fixes.push([key, value]);
   });
   return ov;
@@ -345,21 +345,54 @@ function viewChecklist() {
 
 /* משוב: כל משוב פתוח לאורך כל היום שלו בלבד. משוב הסיום – מהיום האחרון והלאה.
    אפשר קישור נפרד לכל יום (feedback,d1,...) או טופס אחד (feedback,form,...) עם שדה יום שממולא אוטומטית (feedback,dayField,entry.123) */
-function feedbackLink(k, label) {
-  const own = C.feedback[k]; if (own && !/\/spreadsheets\//.test(own)) return own; /* קישור לגיליון לא מוצג לתלמידים */
-  const f = C.feedback.form; if (!f) return '';
-  const fld = C.feedback.dayField;
-  return fld ? f + (f.includes('?') ? '&' : '?') + 'usp=pp_url&' + encodeURIComponent(fld) + '=' + encodeURIComponent(label) : f;
+/* משוב בתוך האתר: התלמיד כותב כאן, והאתר שולח לטופס Google של הצוות (התשובות נכנסות לגיליון).
+   אין שם, אין מייל, בלי עוגיות (credentials: omit). בלי קליטה – נשמר בטלפון ונשלח אוטומטית כשיש רשת. */
+const FB_POST = /^https:\/\/docs\.google\.com\/forms\/d\/e\/[\w-]+\/formResponse$/;
+function fbReady() { const f = C.feedback || {}; return FB_POST.test(f.post || '') && String(f.fields || '').split(',').filter(Boolean).length === 5; }
+async function fbFlush() {
+  const q = LS.get('fbQueue', []); if (!q.length || !navigator.onLine || !fbReady()) return;
+  const fields = String(C.feedback.fields).split(','); const left = [];
+  for (const item of q) {
+    try {
+      const body = new URLSearchParams(); item.v.forEach((v, i) => body.append(fields[i], v));
+      await fetch(C.feedback.post, { method: 'POST', mode: 'no-cors', credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', body });
+      const sent = LS.get('fbSent', {}); sent[item.k] = 'sent'; LS.set('fbSent', sent);
+    } catch (e) { left.push(item); }
+  }
+  LS.set('fbQueue', left);
+  if (location.hash === '#feedback') route();
+}
+window.addEventListener('online', () => fbFlush());
+function fbSubmit(k, lab) {
+  const f = document.querySelector(`form[data-fb="${k}"]`); if (!f) return;
+  const rate = (f.querySelector('input[name=rate]:checked') || {}).value || '';
+  const txt = n => f.querySelector(`[name=${n}]`).value.trim().slice(0, 600);
+  const v = [lab, rate, txt('best'), txt('improve'), txt('more')];
+  if (!rate && !v[2] && !v[3] && !v[4]) return toast('כתבו משהו לפני השליחה 🙂');
+  const q = LS.get('fbQueue', []).filter(x => x.k !== k); q.push({ k, v }); LS.set('fbQueue', q);
+  const sent = LS.get('fbSent', {}); sent[k] = 'queued'; LS.set('fbSent', sent);
+  toast(navigator.onLine && fbReady() ? 'שולחים… תודה!' : 'נשמר בטלפון – יישלח אוטומטית כשתהיה קליטה');
+  route(); fbFlush();
+}
+function fbForm(k, lab) {
+  const st = LS.get('fbSent', {})[k];
+  if (st === 'sent') return '<p class="verdict ok">✓ המשוב נשלח. תודה רבה! 💛</p>';
+  if (st === 'queued') return '<p class="verdict ok">✓ המשוב נשמר בטלפון ויישלח אוטומטית כשתהיה קליטה. תודה! 💛</p>';
+  const ta = (n, l) => `<label class="fb-l" for="fb-${k}-${n}">${l}</label><textarea id="fb-${k}-${n}" name="${n}" rows="3" maxlength="600"></textarea>`;
+  return `<form data-fb="${k}" class="fb-form" onsubmit="return false">
+    <fieldset class="fb-rate"><legend>כמה נהניתם? (1 – בכלל לא, 5 – מאוד)</legend>
+      ${[1, 2, 3, 4, 5].map(n => `<label><input type="radio" name="rate" value="${n}"><span>${n}</span></label>`).join('')}</fieldset>
+    ${ta('best', 'מה היה הכי טוב?')}${ta('improve', 'מה כדאי לשפר?')}${ta('more', 'עוד משהו שתרצו לספר?')}
+    <button type="button" class="btn block" data-act="fbsend" data-k="${k}" data-lab="${esc(lab)}">שליחת המשוב</button></form>`;
 }
 function viewFeedback() {
   const t = today(), last = C.days[C.days.length - 1].date;
   const items = [...C.days.map((d, i) => [d.id, `משוב יום ${i + 1} – ${d.title}`, `יום ${i + 1}`, d.date === t, d.date > t ? `ייפתח ביום ${i + 1} (${fmtDate(d.date)})` : 'המשוב של היום הזה נסגר. תודה!']),
     ['final', 'משוב סיום הטיול', 'סיום הטיול', t >= last, `ייפתח ביום האחרון (${fmtDate(last)})`]];
-  const card = ([k, l, lab, open, why]) => { const u = open ? feedbackLink(k, lab) : '';
-    return `<div class="card ${open ? '' : 'soft'}"><h2>${esc(l)}</h2>${open ? (u ? `<a class="btn" href="${esc(u)}" target="_blank" rel="noopener">פתיחת המשוב</a>` : '<p class="muted">הקישור יפורסם בקרוב. בדקו עדכונים מאוחר יותר.</p>') : `<p class="muted">${esc(why)}</p>`}</div>`; };
+  const card = ([k, l, lab, open, why]) => `<div class="card ${open ? '' : 'soft'}"><h2>${esc(l)}</h2>${open ? fbForm(k, lab) : `<p class="muted">${esc(why)}</p>`}</div>`;
   const open = items.filter(x => x[3]), closed = items.filter(x => !x[3]);
-  return `<h1>משוב</h1><div class="card ai"><b>המשוב אנונימי לחלוטין.</b> לא נאספים שם, מייל או כל פרט מזהה. אנא אל תכתבו במשוב פרטים מזהים – שלכם או של אחרים.<br>שליחת משוב דורשת חיבור לאינטרנט.</div>` +
-    (open.length ? open.map(card).join('') : '<div class="card"><p>כל משוב נפתח ביום שלו בטיול.</p></div>') + closed.map(card).join('') + updateCard() + footer();
+  return `<h1>משוב</h1><div class="card ai"><b>המשוב אנונימי לחלוטין.</b> לא נאספים שם, מייל או כל פרט מזהה – רק מה שכתבתם. אנא אל תכתבו פרטים מזהים – שלכם או של אחרים.<br>אין קליטה? המשוב נשמר בטלפון ונשלח לבד כשתהיה.</div>` +
+    (open.length ? open.map(card).join('') : '<div class="card"><p>כל משוב נפתח ביום שלו בטיול.</p></div>') + closed.map(card).join('') + footer();
 }
 
 function viewReport() {
@@ -634,6 +667,7 @@ window.addEventListener('hashchange', () => { if (!$('#modal').hidden) $('#modal
 document.addEventListener('click', e => {
   const t = e.target.closest('button, [data-act], [data-goday]'); if (!t) return;
   if (t.dataset.act === 'update') return checkUpdates();
+  if (t.dataset.act === 'fbsend') return fbSubmit(t.dataset.k, t.dataset.lab);
   if (t.dataset.day) { LS.set('schedDay', t.dataset.day); return route(); }
   if (t.dataset.goday) { LS.set('schedDay', t.dataset.goday); }
   if (t.dataset.map) { LS.set('mapSel', t.dataset.map); return route(); }

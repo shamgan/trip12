@@ -299,3 +299,17 @@ body.saver .tabbar a{color:#e6e6e6}body.saver .daytabs button,body.saver .seg bu
 body.saver .tile.c-sand{background:#1e1e1e;color:#f2f2f2}body.saver .card.allergy h2{color:#ffb08f}
 body.saver .daychips a.on small{color:#fff}
 .daychips a.on small{color:#fff}
+/* משוב בתוך האתר */
+.fb-form{display:grid;gap:.55rem}
+.fb-rate{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:.45rem}
+.fb-rate legend{font-weight:700;margin-bottom:.4rem;width:100%}
+.fb-rate label{flex:1;min-width:3rem}
+.fb-rate input{position:absolute;opacity:0;width:1px;height:1px}
+.fb-rate span{display:block;text-align:center;font-size:1.25rem;font-weight:800;padding:.6rem 0;border:2px solid #b8461f;border-radius:14px;background:#fff;color:#7a2e12;cursor:pointer}
+.fb-rate input:checked+span{background:#b8461f;color:#fff}
+.fb-rate input:focus-visible+span{outline:3px solid #0b6b74;outline-offset:2px}
+.fb-l{font-weight:700}
+.fb-form textarea{width:100%;font:inherit;font-size:1.05rem;padding:.6rem;border:2px solid #cdbfa8;border-radius:12px;background:#fff;color:#2b2118;resize:vertical}
+.fb-form textarea:focus{outline:3px solid #0b6b74;border-color:#0b6b74}
+body.saver .fb-rate span,body.saver .fb-form textarea{background:#1d1a17;color:#f3ece2;border-color:#8a7a66}
+body.saver .fb-rate input:checked+span{background:#e9a23b;color:#111}
