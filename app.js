@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.8.4';
+const APP_VERSION = '2.9.0';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -304,14 +304,13 @@ function viewNow() {
   } else if (d) {
     const r = routeOf(d.route); const n = C.days.indexOf(d) + 1;
     h += heroBlock(r.photos[0].src, r.photos[0].alt, `${esc(d.weekday)} · יום ${n} מתוך ${C.days.length}`, d.title);
-    h += dayChips(d.id) + '<div class="pad">' + notices + window.TripExtras.forecastCard() + (d.id === C.days[0].id ? allergyCard() : '') + notSaved;
+    h += dayChips(d.id) + '<div class="pad">' + notices + finalFeedbackCard() + window.TripExtras.forecastCard() + (d.id === C.days[0].id ? allergyCard() : '') + notSaved;
     h += nextCard(d) + window.TripExtras.challengeCard();
     h += `<a class="routecard" href="#route-${r.id}"><img src="${esc((r.photos[1] || r.photos[0]).src)}" alt=""><div><div class="kicker">המסלול של היום</div><b>${badge(r)}${esc(r.name)}</b><span>${esc(r.facts.slice(0, 2).map(f => f[1]).join(' · '))}</span></div></a>`;
-    h += `<a class="strip feedback" href="#feedback"><b>💬 משוב יומי</b> – ספרו לנו איך היה. אנונימי לגמרי.</a>`;
   } else {
     const r = routeOf('tzfachot');
     h += heroBlock(r.photos[0].src, r.photos[0].alt, 'הרי אילת · תשפ"ז', 'תודה שטיילתם איתנו!');
-    h += '<div class="pad">' + notices + `<div class="card"><p>נשמח לשמוע מה חשבתם על הטיול כולו. המשוב אנונימי לגמרי.</p><a class="btn block" href="#feedback">משוב סיום הטיול</a></div>`;
+    h += '<div class="pad">' + notices + finalFeedbackCard();
   }
   h += photoTiles() + `<div class="tiles two"><a class="tile c-sea2" href="#bus"><i aria-hidden="true">🚌</i><span>משחקי אוטובוס</span></a><a class="tile c-night" href="#sky"><i aria-hidden="true">🌌</i><span>שמי הלילה</span></a></div><a class="gamecard" href="#game"><span aria-hidden="true">✨</span><div><b>שמי המדבר</b><small>משחק שיתופי בזוגות – כל חבר/ה חדש/ה = כוכב</small></div></a>` + updateCard() + footer() + '</div>';
   return h;
@@ -413,7 +412,7 @@ async function fbFlush() {
     } catch (e) { left.push(item); }
   }
   LS.set('fbQueue', left);
-  if (location.hash === '#feedback') route();
+  if (location.hash === '' || location.hash === '#now') route();
 }
 window.addEventListener('online', () => fbFlush());
 function fbSubmit(k, lab) {
@@ -437,6 +436,11 @@ function fbForm(k, lab) {
       ${[1, 2, 3, 4, 5].map(n => `<label><input type="radio" name="rate" value="${n}"><span>${n}</span></label>`).join('')}</fieldset>
     ${ta('best', 'מה היה הכי טוב?')}${ta('improve', 'מה כדאי לשפר?')}${ta('more', 'עוד משהו שתרצו לספר?')}${ta('gripe', 'וכאן המקום לכל מי שרוצים גם סתם להתלונן באופן כללי (-: <span class="muted">(רשות)</span>')}
     <button type="button" class="btn block" data-act="fbsend" data-k="${k}" data-lab="${esc(lab)}">שליחת המשוב</button></form>`;
+}
+/* משוב סיום הטיול – רק בעמוד הראשי, מהיום האחרון והלאה */
+function finalFeedbackCard() {
+  if (today() < C.days[C.days.length - 1].date) return '';
+  return `<div class="card fb-main" id="fb-final"><h2>💬 משוב על כל הטיול</h2><p class="small">אנונימי לחלוטין – בלי שם, בלי מייל ובלי פרטים מזהים. אנא אל תכתבו פרטים מזהים, שלכם או של אחרים. אין קליטה? נשמר בטלפון ונשלח לבד כשתהיה.</p>${fbForm('final', 'סיום הטיול')}</div>`;
 }
 function viewFeedback() {
   const t = today(), last = C.days[C.days.length - 1].date;
@@ -463,7 +467,7 @@ function viewMore() {
   return `<h1>עוד</h1><div class="tiles">
     ${T('game', '✨', 'שמי המדבר – משחק', 'c-night')}${T('bus', '🚌', 'משחקי אוטובוס', 'c-sea2')}${T('sky', '🌌', 'שמי הלילה', 'c-night2')}${T('routes', '🥾', 'המסלולים', 'c-terra')}${T('learn', '🪨', 'העשרה', 'c-sea')}
     ${T('rules', '📋', 'נהלים', 'c-sun')}${T('checklist', '🎒', 'רשימת ציוד', 'c-sand')}
-    ${T('feedback', '💬', 'משוב אנונימי', 'c-sand')}${T('report', '🛠️', 'דיווח על טעות', 'c-sand')}
+    ${T('report', '🛠️', 'דיווח על טעות', 'c-sand')}
     ${T('install', '📲', 'התקנה והסרה', 'c-sand')}${T('a11y', '♿', 'נגישות', 'c-sand')}
     ${T('about', 'ℹ️', 'אודות והצהרות', 'c-sand')}</div><br>${phones}${updateCard()}${footer()}`;
 }
@@ -706,7 +710,7 @@ function route() {
   const h = (location.hash || '#now').slice(1);
   const [page, arg] = h.includes('-') ? [h.slice(0, h.indexOf('-')), h.slice(h.indexOf('-') + 1)] : [h, null];
   const views = { now: viewNow, schedule: viewSchedule, maps: viewMaps, quiz: () => viewQuiz(arg), more: viewMore, routes: viewRoutes, route: () => viewRoute(arg),
-    report: viewReport, game: () => window.TripGame.view(arg), bus: () => window.TripExtras.viewBus(arg), sky: () => window.TripExtras.viewSky(), rules: viewRules, learn: () => viewLearn(arg), checklist: viewChecklist, feedback: viewFeedback, install: viewInstall, a11y: viewA11y, about: viewAbout };
+    report: viewReport, game: () => window.TripGame.view(arg), bus: () => window.TripExtras.viewBus(arg), sky: () => window.TripExtras.viewSky(), rules: viewRules, learn: () => viewLearn(arg), checklist: viewChecklist, feedback: () => { setTimeout(() => { location.hash = '#now'; }, 0); return viewNow(); }, install: viewInstall, a11y: viewA11y, about: viewAbout };
   const v = views[page] || viewNow;
   $('#main').innerHTML = v();
   document.body.classList.toggle('bleed', page === 'now' || page === 'route' || !views[page]);
