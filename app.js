@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.10.0';
+const APP_VERSION = '2.10.1';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -324,7 +324,7 @@ function viewFinale(notices) {
   return `<section class="finale"><img src="photos/finale.webp" width="1400" height="1038" alt="צילום רחפן: תלמידי השכבה יושבים על החול במדבר ויוצרים בגופם את האותיות י&quot;ב.">
     <div class="finale-txt"><div class="kicker">שכבת י"ב · הרי אילת · תשפ"ז</div><h1>תודה שטיילתם איתנו!</h1></div></section>
     <div class="pad">${notices}
-    <div class="card thanks"><p>שלושה ימים, שלושה מסלולים והרבה קילומטרים בהרי אילת, ועשיתם את זה יחד.</p>
+    <div class="card thanks"><p>שלושה ימים, שלושה מסלולים, הרבה טבע בראשית וחוויות שלא שוכחים בהרי אילת, ועשיתם את זה יחד.</p>
       <p>תודה על ההליכה, על הסבלנות, על העזרה אחד לשני ועל האווירה הטובה. תודה גם לצוות המורים, למדריכים ולכל מי שליווה אותנו בדרך. 💛</p>
       <p><b>לפני שנפרדים, ספרו לנו בדקה איך היה.</b></p></div>
     ${finalFeedbackCard()}
