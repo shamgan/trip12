@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.8.1';
+const APP_VERSION = '2.8.2';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -132,6 +132,58 @@ async function checkUpdates() {
     modal('לא הצלחנו לבדוק עדכונים', '<p>ייתכן שהקליטה חלשה. האתר ממשיך לעבוד עם המידע הקיים.</p>', [['סגור']]);
   }
 }
+/* ---------- עדכון חובה: בכל פתיחה/חזרה לאתר, כשיש רשת – גרסה חדשה מותקנת ועדכוני הצוות נטענים לבד ---------- */
+let autoBusy = false, autoLast = 0;
+function updatingOverlay(msg) {
+  let o = document.getElementById('forceUpd');
+  if (!o) { o = document.createElement('div'); o.id = 'forceUpd'; o.setAttribute('role', 'alertdialog'); o.setAttribute('aria-live', 'assertive');
+    o.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(250,245,236,.97);display:flex;align-items:center;justify-content:center;padding:1.5rem;text-align:center;font-size:1.2rem;color:#2b2118';
+    document.body.appendChild(o); }
+  o.innerHTML = `<div><div style="font-size:2.4rem">🔄</div>${msg}</div>`;
+}
+async function forceReloadFresh() {
+  try { const ks = await caches.keys(); await Promise.all(ks.filter(k => k.startsWith('trip12')).map(k => caches.delete(k))); } catch (e) {}
+  try { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); } catch (e) {}
+  location.reload();
+}
+async function autoUpdate(force) {
+  if (!navigator.onLine || autoBusy || isEnded() || (!force && Date.now() - autoLast < 60000)) return;
+  autoBusy = true; autoLast = Date.now();
+  try {
+    const r = await fetch('sw.js?t=' + Date.now(), { cache: 'no-store' });
+    const m = r.ok && (await r.text()).match(/CACHE\s*=\s*'trip12-([\w.]+)'/);
+    if (m && m[1] !== APP_VERSION) {
+      const tried = LS.get('forceTry', null);
+      if (tried && tried.v === m[1] && Date.now() - tried.t < 120000) {
+        updatingOverlay(`<p><b>יש גרסה חדשה (${esc(m[1])}).</b></p><p>סגרו את האתר לגמרי ופתחו אותו מחדש.</p>`);
+      } else {
+        LS.set('forceTry', { v: m[1], t: Date.now() });
+        updatingOverlay('<p><b>מעדכנים את האתר לגרסה החדשה…</b></p><p class="small">זה לוקח כמה שניות. לא לסגור.</p>');
+        try { const reg = await navigator.serviceWorker.getRegistration(); reg && await reg.update(); } catch (e) {}
+        setTimeout(forceReloadFresh, 8000); /* אם המעבר הרגיל לא קרה – טוענים מחדש מהרשת */
+      }
+      return;
+    }
+  } catch (e) {}
+  try {
+    if (C.updatesUrl) {
+      const res = await fetch(C.updatesUrl + (C.updatesUrl.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const ov = sheetToOverrides(parseCSV(await res.text())), cur = LS.get('overrides', null);
+        if (!cur || ov.version !== cur.version) {
+          ov.date = new Date().toLocaleString('he-IL', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+          LS.set('overrides', ov); LS.set('lastCheck', new Date().toISOString()); rebuild(); route();
+          toast('📣 התקבל עדכון מהצוות' + (ov.changes ? ': ' + ov.changes : ''));
+        }
+      }
+    }
+  } catch (e) {}
+  finally { autoBusy = false; }
+}
+setTimeout(() => autoUpdate(true), 1200);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) autoUpdate(); });
+window.addEventListener('online', () => autoUpdate(true));
+setInterval(() => { if (!document.hidden) autoUpdate(); }, 10 * 60000);
 function updateCard() {
   const v = LS.get('overrides', null);
   return `<div class="card soft update-strip"><div><b>🔄 עדכונים מהצוות</b><div class="small muted">${v && v.date ? 'עודכן לאחרונה: ' + esc(v.date) : 'הצוות מעדכן מדי פעם – בדקו כשיש קליטה'}</div></div>
