@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.9.0';
+const APP_VERSION = '2.10.0';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -271,8 +271,8 @@ function heroBlock(img, alt, kicker, title, extra = '') {
   return `<section class="hero" style="background-image:url('${esc(img)}')"><span class="sr-only">${esc(alt)}</span>
     ${extra}<div class="hero-txt"><div class="hero-k">${kicker}</div><h1>${esc(title)}</h1></div></section>`;
 }
-function dayChips(active) {
-  return `<nav class="daychips" aria-label="ימי הטיול">${C.days.map((x, i) => `<a href="#schedule" data-goday="${x.id}" class="${x.id === active ? 'on' : ''}" ${x.id === active ? 'aria-current="date"' : ''}>יום ${i + 1}<small>${fmtDate(x.date)}</small></a>`).join('')}</nav>`;
+function dayChips(active, trip) {
+  return `<nav class="daychips" aria-label="ימי הטיול">${C.days.map((x, i) => `<a href="${trip ? `#trip-${x.id}` : '#schedule'}" ${trip ? '' : `data-goday="${x.id}"`} class="${x.id === active ? 'on' : ''}" ${x.id === active ? 'aria-current="date"' : ''}>יום ${i + 1}<small>${fmtDate(x.date)}</small></a>`).join('')}</nav>`;
 }
 function nextCard(day) {
   const i = nextItemIndex(day); const it = i >= 0 ? day.items[i] : day.items[0];
@@ -293,6 +293,7 @@ function viewNow() {
   let h = '';
   const notices = C.notices.map(n => `<div class="strip info" role="note"><b>📣 הודעה מהצוות:</b> ${esc(n)}</div>`).join('');
   const notSaved = (!navigator.serviceWorker || !navigator.serviceWorker.controller) ? `<div class="strip info"><b>📲 האתר עוד לא שמור בטלפון.</b> השאירו אותו פתוח עם אינטרנט עד שיופיע "✓ נשמר בטלפון". <a href="#install">איך שומרים</a></div>` : '';
+  if (t >= C.days[C.days.length - 1].date) return viewFinale(notices);
   if (t < C.tripDates.start) {
     const days = Math.round((new Date(C.tripDates.start) - new Date(t)) / 864e5);
     const r = routeOf(C.days[0].route);
@@ -312,8 +313,30 @@ function viewNow() {
     h += heroBlock(r.photos[0].src, r.photos[0].alt, 'הרי אילת · תשפ"ז', 'תודה שטיילתם איתנו!');
     h += '<div class="pad">' + notices + finalFeedbackCard();
   }
-  h += photoTiles() + `<div class="tiles two"><a class="tile c-sea2" href="#bus"><i aria-hidden="true">🚌</i><span>משחקי אוטובוס</span></a><a class="tile c-night" href="#sky"><i aria-hidden="true">🌌</i><span>שמי הלילה</span></a></div><a class="gamecard" href="#game"><span aria-hidden="true">✨</span><div><b>שמי המדבר</b><small>משחק שיתופי בזוגות – כל חבר/ה חדש/ה = כוכב</small></div></a>` + updateCard() + footer() + '</div>';
+  h += moreTiles();
   return h;
+}
+function moreTiles() {
+  return photoTiles() + `<div class="tiles two"><a class="tile c-sea2" href="#bus"><i aria-hidden="true">🚌</i><span>משחקי אוטובוס</span></a><a class="tile c-night" href="#sky"><i aria-hidden="true">🌌</i><span>שמי הלילה</span></a></div><a class="gamecard" href="#game"><span aria-hidden="true">✨</span><div><b>שמי המדבר</b><small>משחק שיתופי בזוגות – כל חבר/ה חדש/ה = כוכב</small></div></a>` + updateCard() + footer() + '</div>';
+}
+/* עמוד הסיום: מהיום האחרון והלאה זה העמוד הראשי. ימי הטיול ממשיכים בנפרד (#trip) */
+function viewFinale(notices) {
+  return `<section class="finale"><img src="photos/finale.webp" width="1400" height="1038" alt="צילום רחפן: תלמידי השכבה יושבים על החול במדבר ויוצרים בגופם את האותיות י&quot;ב.">
+    <div class="finale-txt"><div class="kicker">שכבת י"ב · הרי אילת · תשפ"ז</div><h1>תודה שטיילתם איתנו!</h1></div></section>
+    <div class="pad">${notices}
+    <div class="card thanks"><p>שלושה ימים, שלושה מסלולים והרבה קילומטרים בהרי אילת, ועשיתם את זה יחד.</p>
+      <p>תודה על ההליכה, על הסבלנות, על העזרה אחד לשני ועל האווירה הטובה. תודה גם לצוות המורים, למדריכים ולכל מי שליווה אותנו בדרך. 💛</p>
+      <p><b>לפני שנפרדים, ספרו לנו בדקה איך היה.</b></p></div>
+    ${finalFeedbackCard()}
+    <a class="routecard days" href="#trip"><span class="days-i" aria-hidden="true">🗓️</span><div><div class="kicker">לזכור את הדרך</div><b>ימי הטיול</b><span>שלושת הימים, הלו"ז והמסלולים</span></div></a>` + moreTiles();
+}
+function viewTrip(id) {
+  const d = C.days.find(x => x.id === id) || C.days[C.days.length - 1];
+  const r = routeOf(d.route); const n = C.days.indexOf(d) + 1;
+  return heroBlock(r.photos[0].src, r.photos[0].alt, `${esc(d.weekday)} ${fmtDate(d.date)} · יום ${n} מתוך ${C.days.length}`, d.title, '<a class="hero-back" href="#now">→ לעמוד הראשי</a>') +
+    dayChips(d.id, true) + `<div class="pad"><div class="card"><h2>הלו"ז של היום</h2>${schedList(d, d.date === today())}</div>
+    <a class="routecard" href="#route-${r.id}"><img src="${esc((r.photos[1] || r.photos[0]).src)}" alt=""><div><div class="kicker">המסלול של היום</div><b>${badge(r)}${esc(r.name)}</b><span>${esc(r.facts.slice(0, 2).map(f => f[1]).join(' · '))}</span></div></a>
+    ${footer()}</div>`;
 }
 
 function viewSchedule() {
@@ -417,9 +440,12 @@ async function fbFlush() {
 window.addEventListener('online', () => fbFlush());
 function fbSubmit(k, lab) {
   const f = document.querySelector(`form[data-fb="${k}"]`); if (!f) return;
-  const rate = (f.querySelector('input[name=rate]:checked') || {}).value || '';
-  const txt = n => f.querySelector(`[name=${n}]`).value.trim().slice(0, 600);
-  const v = [lab, rate, txt('best'), txt('improve'), txt('more'), txt('gripe')];
+  const pick = n => (f.querySelector(`input[name=${n}]:checked`) || {}).value || '';
+  const rate = pick('rate');
+  const txt = n => { const el = f.querySelector(`[name=${n}]`); return el ? el.value.trim().slice(0, 600) : ''; };
+  /* במשוב הסיום שלושת הדירוגים הנוספים נכנסים לשדה "עוד" בגיליון, כדי לא לשנות את טופס Google */
+  const more = k === 'final' ? ((pick('lodge') || pick('food') || pick('guide')) ? `לינה ${pick('lodge') || '-'} · אוכל ${pick('food') || '-'} · הדרכה ${pick('guide') || '-'}` : '') : txt('more');
+  const v = [lab, rate, txt('best'), txt('improve'), more, txt('gripe')];
   if (!rate && !v[2] && !v[3] && !v[4] && !v[5]) return toast('כתבו משהו לפני השליחה 🙂');
   const q = LS.get('fbQueue', []).filter(x => x.k !== k); q.push({ k, v }); LS.set('fbQueue', q);
   const sent = LS.get('fbSent', {}); sent[k] = 'queued'; LS.set('fbSent', sent);
@@ -431,6 +457,12 @@ function fbForm(k, lab) {
   if (st === 'sent') return '<p class="verdict ok">✓ המשוב נשלח. תודה רבה! 💛</p>';
   if (st === 'queued') return '<p class="verdict ok">✓ המשוב נשמר בטלפון ויישלח אוטומטית כשתהיה קליטה. תודה! 💛</p>';
   const ta = (n, l) => `<label class="fb-l" for="fb-${k}-${n}">${l}</label><textarea id="fb-${k}-${n}" name="${n}" rows="3" maxlength="600"></textarea>`;
+  const rt = (n, l) => `<fieldset class="fb-rate"><legend>${l}</legend>${[1, 2, 3, 4, 5].map(x => `<label><input type="radio" name="${n}" value="${x}"><span>${x}</span></label>`).join('')}</fieldset>`;
+  if (k === 'final') return `<form data-fb="${k}" class="fb-form" onsubmit="return false">
+    <p class="small muted">דירוג מ-1 (בכלל לא טוב) עד 5 (מצוין).</p>
+    ${rt('rate', 'הטיול בסך הכול')}${rt('lodge', 'הלינה בחאן יעלים: חדרים, ניקיון ושקט בלילה')}${rt('food', 'האוכל בחאן יעלים')}${rt('guide', 'ההדרכה במסלולים')}
+    ${ta('best', 'מה היה הכי טוב בטיול?')}${ta('improve', 'מה כדאי לשפר? אפשר לכתוב גם על הלינה, האוכל או ההדרכה.')}${ta('gripe', 'וכאן המקום לכל מי שרוצים גם סתם להתלונן באופן כללי (-: <span class="muted">(רשות)</span>')}
+    <button type="button" class="btn block" data-act="fbsend" data-k="${k}" data-lab="${esc(lab)}">שליחת המשוב</button></form>`;
   return `<form data-fb="${k}" class="fb-form" onsubmit="return false">
     <fieldset class="fb-rate"><legend>כמה נהניתם? (1 – בכלל לא, 5 – מאוד)</legend>
       ${[1, 2, 3, 4, 5].map(n => `<label><input type="radio" name="rate" value="${n}"><span>${n}</span></label>`).join('')}</fieldset>
@@ -709,11 +741,11 @@ function route() {
   if (isEnded()) { $('#main').innerHTML = viewEnded(); document.querySelector('.tabbar').style.display = 'none'; document.title = 'הטיול הסתיים'; return; }
   const h = (location.hash || '#now').slice(1);
   const [page, arg] = h.includes('-') ? [h.slice(0, h.indexOf('-')), h.slice(h.indexOf('-') + 1)] : [h, null];
-  const views = { now: viewNow, schedule: viewSchedule, maps: viewMaps, quiz: () => viewQuiz(arg), more: viewMore, routes: viewRoutes, route: () => viewRoute(arg),
+  const views = { now: viewNow, schedule: viewSchedule, maps: viewMaps, quiz: () => viewQuiz(arg), more: viewMore, routes: viewRoutes, route: () => viewRoute(arg), trip: () => viewTrip(arg),
     report: viewReport, game: () => window.TripGame.view(arg), bus: () => window.TripExtras.viewBus(arg), sky: () => window.TripExtras.viewSky(), rules: viewRules, learn: () => viewLearn(arg), checklist: viewChecklist, feedback: () => { setTimeout(() => { location.hash = '#now'; }, 0); return viewNow(); }, install: viewInstall, a11y: viewA11y, about: viewAbout };
   const v = views[page] || viewNow;
   $('#main').innerHTML = v();
-  document.body.classList.toggle('bleed', page === 'now' || page === 'route' || !views[page]);
+  document.body.classList.toggle('bleed', page === 'now' || page === 'route' || page === 'trip' || !views[page]);
   const tab = { now: 'now', schedule: 'schedule', maps: 'maps', quiz: 'quiz' }[page] || 'more';
   document.querySelectorAll('.tabbar a').forEach(a => { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   document.title = (TITLES[page] || 'טיול') + ' · טיול שנתי י"ב';

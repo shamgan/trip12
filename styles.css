@@ -313,3 +313,14 @@ body.saver .daychips a.on small{color:#fff}
 .fb-form textarea:focus{outline:3px solid #0b6b74;border-color:#0b6b74}
 body.saver .fb-rate span,body.saver .fb-form textarea{background:#1d1a17;color:#f3ece2;border-color:#8a7a66}
 body.saver .fb-rate input:checked+span{background:#e9a23b;color:#111}
+
+/* עמוד הסיום */
+.finale{max-width:760px;margin:0 auto;position:relative}
+.finale img{display:block;width:100%;height:auto;border-radius:0 0 30px 30px}
+.finale-txt{position:relative;z-index:2;margin:-34px 14px 0;background:#fff;border-radius:22px;padding:14px 18px;box-shadow:var(--shadow-2);text-align:center;border-top:5px solid var(--primary)}
+.finale-txt .kicker{color:var(--primary);font-weight:800}
+.finale-txt h1{margin:2px 0 0;font-size:1.9rem}
+.card.thanks{font-size:1.05rem;line-height:1.6}.card.thanks p{margin:.35rem 0}
+.fb-form .fb-rate{margin-top:.8rem}
+.routecard.days .days-i{font-size:2.2rem;display:flex;align-items:center;justify-content:center;width:72px;flex:none}
+body.saver .finale-txt{background:#1e1e1e;color:var(--ink)}
