@@ -15,6 +15,9 @@
   /* ================= מצב חיסכון ומצב לילה ================= */
   function applyModes() {
     const m = S.get('modes', {});
+    /* מצב לילה אדום כבה לבד בבוקר (06:00–17:00), כדי שהמסך לא יישאר כהה למחרת */
+    const h = new Date().getHours();
+    if (m.night && h >= 6 && h < 17) { m.night = false; S.set('modes', m); }
     document.body.classList.toggle('saver', !!(m.saver || m.night));
     document.body.classList.toggle('nightred', !!m.night);
     const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = m.night ? '#000000' : m.saver ? '#111111' : '#b8461f';
@@ -219,6 +222,6 @@
     if (t.dataset.x === 'saver' || t.dataset.x === 'night') setMode(t.dataset.x, t.checked);
   });
 
-  applyModes(); setTimeout(batteryHint, 4000);
+  applyModes(); setTimeout(batteryHint, 4000); document.addEventListener('visibilitychange', () => { if (!document.hidden) applyModes(); });
   window.TripExtras = { viewBus, viewSky, challengeCard, forecastCard, modesCard, applyModes };
 })();
