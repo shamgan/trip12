@@ -1,5 +1,5 @@
 /* Service worker: שומר את כל קבצי האתר בטלפון לשימוש ללא אינטרנט. לא אוסף ולא שולח מידע. */
-const CACHE = 'trip12-2.8.2';
+const CACHE = 'trip12-2.8.3';
 const ASSETS = ['./', 'index.html', 'styles.css', 'app.js', 'game.js', 'extras.js', 'lib/qrcode.min.js', 'lib/jsQR.min.js', 'manifest.webmanifest', 'data/content.json',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   'maps/eilat.webp', 'maps/israel.webp', 'maps/route-red.webp', 'maps/route-amir.webp', 'maps/route-tzfachot.webp',
@@ -8,8 +8,19 @@ const ASSETS = ['./', 'index.html', 'styles.css', 'app.js', 'game.js', 'extras.j
 
 async function notify(msg) { (await self.clients.matchAll({ includeUncontrolled: true })).forEach(c => c.postMessage(msg)); }
 
+/* התקנה עמידה לקליטה חלשה: קבצי הקוד והתוכן חייבים להגיע; תמונות, מפות וגופנים – מנסים מהרשת,
+   ואם נכשל לוקחים את העותק מהגרסה הקודמת, כדי שעדכון לא ייתקע בגלל תמונה אחת */
+const CORE = ASSETS.filter(u => !/^(photos|fonts|maps)\//.test(u));
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    await c.addAll(CORE.map(u => new Request(u, { cache: 'reload' })));
+    await Promise.all(ASSETS.filter(u => !CORE.includes(u)).map(async u => {
+      try { const r = await fetch(new Request(u, { cache: 'reload' })); if (r.ok) return c.put(u, r); throw 0; }
+      catch (err) { const old = await caches.match(u, { ignoreSearch: true }); if (old) return c.put(u, old); }
+    }));
+    await self.skipWaiting();
+  })());
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('trip12-') && k !== CACHE).map(k => caches.delete(k))))
