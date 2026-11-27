@@ -1,7 +1,7 @@
 /* טיול שנתי י"ב תשפ"ז – אתר הטיול. ללא איסוף מידע: הכול נשמר מקומית בטלפון (localStorage). */
 'use strict';
 
-const APP_VERSION = '2.10.1';
+const APP_VERSION = '2.10.2';
 const LETTERS = ["א'", "ב'", "ג'", "ד'"];
 const MAPS = {
   eilat: { title: 'הרי אילת', img: 'maps/eilat.webp', lat0: 29.72, lat1: 29.48, lon0: 34.84, lon1: 35.03, latRef: 29.6, vbW: 688.4, vbH: 1000,
@@ -461,7 +461,7 @@ function fbForm(k, lab) {
   if (k === 'final') return `<form data-fb="${k}" class="fb-form" onsubmit="return false">
     <p class="small muted">דירוג מ-1 (בכלל לא טוב) עד 5 (מצוין).</p>
     ${rt('rate', 'הטיול בסך הכול')}${rt('lodge', 'הלינה בחאן יעלים: חדרים, ניקיון ושקט בלילה')}${rt('food', 'האוכל בחאן יעלים')}${rt('guide', 'ההדרכה במסלולים')}
-    ${ta('best', 'מה היה הכי טוב בטיול?')}${ta('improve', 'מה כדאי לשפר? אפשר לכתוב גם על הלינה, האוכל או ההדרכה.')}${ta('gripe', 'וכאן המקום לכל מי שרוצים גם סתם להתלונן באופן כללי (-: <span class="muted">(רשות)</span>')}
+    ${ta('best', 'מה היה הכי טוב בטיול?')}${ta('improve', 'מה כדאי לשפר?')}${ta('gripe', 'וכאן המקום לכל מי שרוצים גם סתם להתלונן באופן כללי (-: <span class="muted">(רשות)</span>')}
     <button type="button" class="btn block" data-act="fbsend" data-k="${k}" data-lab="${esc(lab)}">שליחת המשוב</button></form>`;
   return `<form data-fb="${k}" class="fb-form" onsubmit="return false">
     <fieldset class="fb-rate"><legend>כמה נהניתם? (1 – בכלל לא, 5 – מאוד)</legend>
